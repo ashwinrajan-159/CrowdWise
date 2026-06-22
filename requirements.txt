@@ -4,3 +4,8 @@ numpy==2.3.3
 scikit-learn==1.6.1
 lightgbm==4.6.0
 # xgboost==3.2.0  # optional alternative GBM; LightGBM is the default baseline
+
+# Event-calendar scraping (scrape_events.py). Only needed for live scraping;
+# the bundled cached sample + the rest of the pipeline run without these.
+requests==2.32.5
+beautifulsoup4==4.14.3

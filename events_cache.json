@@ -1,0 +1,77 @@
+{
+  "_comment": "Bundled fallback for scrape_events.py — real Bengaluru venues with real coordinates, so the demo produces a credible plan even with no network. Replace/refresh by running scrape_events.py against a live source. Dates are illustrative 'upcoming' slots.",
+  "events": [
+    {
+      "title": "International cricket match",
+      "kind": "sports",
+      "venue": "M. Chinnaswamy Stadium, Bengaluru",
+      "start": "2026-06-27 18:30:00+00",
+      "end": "2026-06-27 23:00:00+00",
+      "closure": true, "priority": "High",
+      "lat": 12.978889, "lon": 77.599722
+    },
+    {
+      "title": "Stadium concert",
+      "kind": "concert",
+      "venue": "Sree Kanteerava Stadium, Bengaluru",
+      "start": "2026-06-28 17:00:00+00",
+      "end": "2026-06-28 22:00:00+00",
+      "closure": true, "priority": "High",
+      "lat": 12.965833, "lon": 77.595278
+    },
+    {
+      "title": "Tech-park music festival",
+      "kind": "festival",
+      "venue": "Manyata Tech Park, Bengaluru",
+      "start": "2026-06-28 16:00:00+00",
+      "end": "2026-06-28 23:30:00+00",
+      "closure": false, "priority": "High",
+      "lat": 13.044, "lon": 77.620
+    },
+    {
+      "title": "Temple procession",
+      "kind": "procession",
+      "venue": "Bull Temple Road, Basavanagudi, Bengaluru",
+      "start": "2026-06-29 07:00:00+00",
+      "end": "2026-06-29 11:00:00+00",
+      "closure": true, "priority": "High",
+      "lat": 12.9419, "lon": 77.5663
+    },
+    {
+      "title": "Public rally",
+      "kind": "rally",
+      "venue": "Freedom Park, Bengaluru",
+      "start": "2026-06-29 09:00:00+00",
+      "end": "2026-06-29 13:00:00+00",
+      "closure": true, "priority": "High",
+      "lat": 12.9784, "lon": 77.5808
+    },
+    {
+      "title": "Marathon",
+      "kind": "marathon",
+      "venue": "Cubbon Park, Bengaluru",
+      "start": "2026-06-30 05:30:00+00",
+      "end": "2026-06-30 09:30:00+00",
+      "closure": true, "priority": "High",
+      "lat": 12.9763, "lon": 77.5929
+    },
+    {
+      "title": "Exhibition opening",
+      "kind": "festival",
+      "venue": "Palace Grounds, Bengaluru",
+      "start": "2026-06-30 16:00:00+00",
+      "end": "2026-06-30 22:00:00+00",
+      "closure": false, "priority": "High",
+      "lat": 13.0048, "lon": 77.5908
+    },
+    {
+      "title": "Outer Ring Road resurfacing",
+      "kind": "roadwork",
+      "venue": "Marathahalli, Outer Ring Road, Bengaluru",
+      "start": "2026-07-01 22:00:00+00",
+      "end": "2026-07-02 05:00:00+00",
+      "closure": true, "priority": "Low",
+      "lat": 12.9569, "lon": 77.7011
+    }
+  ]
+}

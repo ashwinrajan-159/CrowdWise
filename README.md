@@ -220,7 +220,24 @@ python run_phase0.py --walk-forward
 - `replay_log_<target>.csv` — the predicted / acted / observed triple per event
 - `summary_<target>.json` — KPIs plus run metadata
 
-**4. Predict on a new / upcoming events file.** This is the forward-looking
+**4. (Optional) Auto-fill the events file from the web.** A scraper pulls
+upcoming public events, geocodes each to a location, and writes the CSV the
+pipeline consumes. If the live scrape fails (offline, site changed, rate-limited),
+it falls back to a bundled cached sample so it never breaks:
+
+```bash
+python scrape_events.py --run         # scrape -> upcoming_events.csv -> predict
+python scrape_events.py --offline     # use the bundled cached sample (no network)
+```
+
+> This scrapes the *event calendar* (what's coming) — **not** live traffic. Real-
+> time congestion data is a connected-vehicle/probe feed, which is a Phase-2
+> integration that drops into the pipeline's `TargetProvider` seam. It's
+> deliberately out of scope: acting on a continuous live prediction reintroduces
+> the [lost-ground-truth problem](#why-is-there-a-phase-0), which is exactly what
+> the replay-first design avoids.
+
+**5. Predict on a new / upcoming events file.** This is the forward-looking
 mode — hand it a calendar of events that *haven't happened yet* (a sample ships
 with the repo) and it forecasts the chokepoints and writes a deployment dashboard
 for them:
@@ -237,13 +254,13 @@ python predict.py upcoming_events.csv
 > future events have nothing to score against yet (the [lost-ground-truth
 > problem](#why-is-there-a-phase-0)) — accuracy is validated on history in step 2.
 
-**5. Run the tests:**
+**6. Run the tests:**
 
 ```bash
 pytest -q          # 12 tests pinning pipeline behavior
 ```
 
-**6. See the operator view.** Open [artifacts/operator_view.html](artifacts/operator_view.html)
+**7. See the operator view.** Open [artifacts/operator_view.html](artifacts/operator_view.html)
 in a browser — the **Deployment Ledger** for 17 Mar 2024. It shows the model's
 most striking real call: 10 of 12 officers sent to a late-night VIP convoy down
 Mysore Road known days ahead, each recommendation auditable down to the five past
@@ -261,6 +278,8 @@ generates the same dashboard for *your* file.)
 ├── RESULTS.md             ← the wedge proof + honest caveats
 ├── run_phase0.py          ← end-to-end runner: validate on history (the entry point)
 ├── predict.py             ← forward prediction: chokepoints for a NEW events file
+├── scrape_events.py       ← auto-fill the events file from public web listings
+├── events_cache.json      ← bundled fallback events (keeps the scraper demo alive)
 ├── requirements.txt
 ├── astram_event_data_anonymized.csv   ← the real (anonymized) event log
 ├── upcoming_events.csv    ← sample 'future' events for predict.py

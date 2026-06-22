@@ -5,3 +5,5 @@ artifacts/replay_log_*.csv
 artifacts/summary_*.json
 artifacts/walkforward_log_*.csv
 .venv/
+.geocode_cache.json
+scraped_events.csv

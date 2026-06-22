@@ -71,9 +71,33 @@ class IngestReport:
         )
 
 
+# Columns the loader reads. A minimal/external CSV (e.g. a scraped event feed)
+# only needs the first group; the rest are outcome/audit fields that simply don't
+# exist for a future event, so we synthesize them as empty rather than require them.
+REQUIRED_COLS = {"id", "event_type", "event_cause", "latitude", "longitude",
+                 "start_datetime"}
+OPTIONAL_COLS = {"endlatitude", "endlongitude", "priority", "status",
+                 "requires_road_closure", "authenticated", "end_datetime",
+                 "resolved_datetime", "closed_datetime", "created_date",
+                 "corridor", "zone", "junction", "police_station",
+                 "veh_type", "cargo_material", "address"}
+
+
 def load_events(csv_path: str | Path) -> tuple[pd.DataFrame, IngestReport]:
-    """Load and validate the event log. Returns (clean_df, report)."""
+    """Load and validate the event log. Returns (clean_df, report).
+
+    Tolerant of minimal inputs: a CSV carrying only the required columns (the
+    case for a calendar of upcoming events) is accepted — missing optional
+    columns are filled empty, since outcome/audit fields don't exist ahead of time.
+    """
     raw = pd.read_csv(csv_path, dtype=str, keep_default_na=False)
+    missing_required = REQUIRED_COLS - set(raw.columns)
+    if missing_required:
+        raise ValueError(
+            f"CSV is missing required columns: {sorted(missing_required)}. "
+            f"Needed: {sorted(REQUIRED_COLS)}.")
+    for col in OPTIONAL_COLS - set(raw.columns):
+        raw[col] = ""  # synthesize empty so downstream column access is safe
     total = len(raw)
 
     df = pd.DataFrame(index=raw.index)
@@ -117,7 +141,8 @@ def load_events(csv_path: str | Path) -> tuple[pd.DataFrame, IngestReport]:
     df["is_linear"] = df["end_lat"].notna() & df["end_lon"].notna()
 
     # --- categorical context ----------------------------------------------
-    for col in ("corridor", "zone", "junction", "police_station", "veh_type", "cargo_material"):
+    for col in ("corridor", "zone", "junction", "police_station", "veh_type",
+                "cargo_material", "address"):
         df[col] = raw[col].map(_clean_str)
     # veh_type free-text contamination -> only keep a short controlled set.
     valid_veh = {
