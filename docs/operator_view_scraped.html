@@ -1,0 +1,352 @@
+<title>Deployment Ledger — 2026-06-27|2026-07-01 (upcoming)</title>
+<style>
+  :root{
+    --ground:#0E1418;
+    --ground-2:#141C22;
+    --ground-3:#1A242B;
+    --text:#E8EDF0;
+    --text-dim:#8A99A3;
+    --text-faint:#566069;
+    --accent:#FFB000;          /* sodium-lamp amber — the signal color */
+    --accent-soft:#5c4413;
+    --teal:#2DD4BF;            /* covered / ok */
+    --warn:#FF5A5F;           /* closure / critical */
+    --hair:#26323A;
+    --hair-bright:#34434C;
+    --mono:"Courier New",ui-monospace,monospace;
+  }
+  @font-face{
+    /* system stacks only (CSP blocks remote fonts); chosen for character */
+    font-family:"OpStack";
+    src:local("Helvetica Neue Condensed"),local("Arial Narrow");
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--ground);color:var(--text);
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;
+    font-size:16px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 78% -8%, rgba(255,176,0,.07), transparent 60%),
+      radial-gradient(700px 600px at 0% 110%, rgba(45,212,191,.05), transparent 55%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,4vw,56px) clamp(16px,4vw,40px) 96px;}
+
+  /* ---------- masthead ---------- */
+  .eyebrow{
+    font-family:"Arial Narrow","Helvetica Neue",sans-serif;
+    font-stretch:condensed;
+    text-transform:uppercase;letter-spacing:.34em;
+    font-size:12px;color:var(--accent);font-weight:700;
+    display:flex;align-items:center;gap:12px;
+  }
+  .eyebrow::before{content:"";width:34px;height:2px;background:var(--accent);display:inline-block;}
+  h1{
+    font-family:"Arial Narrow","Helvetica Neue",sans-serif;
+    font-stretch:condensed;
+    font-weight:800;letter-spacing:-.01em;line-height:.96;
+    font-size:clamp(38px,7vw,76px);margin:.28em 0 .12em;
+    text-transform:uppercase;
+  }
+  h1 .date{color:var(--accent);}
+  .standfirst{color:var(--text-dim);font-size:clamp(15px,1.5vw,18px);max-width:60ch;margin:0;}
+
+  /* ---------- summary strip ---------- */
+  .strip{
+    display:flex;flex-wrap:wrap;gap:1px;background:var(--hair);
+    border:1px solid var(--hair);margin:36px 0 8px;border-radius:3px;overflow:hidden;
+  }
+  .stat{background:var(--ground-2);padding:16px 22px;flex:1 1 150px;}
+  .stat .k{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    font-size:clamp(28px,4vw,40px);font-weight:800;line-height:1;letter-spacing:-.01em;
+  }
+  .stat .k .unit{font-size:.42em;color:var(--text-dim);font-weight:600;letter-spacing:.04em;}
+  .stat .l{color:var(--text-faint);text-transform:uppercase;letter-spacing:.16em;font-size:10.5px;margin-top:8px;font-weight:600;}
+  .stat.live .k{color:var(--accent);}
+
+  /* ---------- pool meter ---------- */
+  .poolbar{display:flex;gap:5px;margin:18px 0 4px;flex-wrap:wrap;}
+  .pip{width:22px;height:8px;border-radius:1px;background:var(--ground-3);border:1px solid var(--hair-bright);}
+  .pip.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(255,176,0,.4);}
+  .poolnote{color:var(--text-faint);font-size:12px;letter-spacing:.04em;margin-top:4px;}
+
+  /* ---------- ledger ---------- */
+  .ledger-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin:44px 0 4px;gap:16px;flex-wrap:wrap;
+  }
+  .ledger-head h2{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    text-transform:uppercase;letter-spacing:.04em;font-weight:800;
+    font-size:22px;margin:0;
+  }
+  .legend{display:flex;gap:18px;color:var(--text-faint);font-size:11.5px;letter-spacing:.05em;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.amber{background:var(--accent);}
+  .dot.none{background:var(--ground-3);border:1px solid var(--hair-bright);}
+
+  .row{
+    display:grid;
+    grid-template-columns:46px 58px 1fr auto;
+    gap:0 18px;align-items:center;
+    border-top:1px solid var(--hair);
+    padding:16px 4px;
+    cursor:pointer;position:relative;
+    transition:background .15s ease;
+  }
+  .row:last-of-type{border-bottom:1px solid var(--hair);}
+  .row:hover{background:var(--ground-2);}
+  .row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+  .row[aria-expanded="true"]{background:var(--ground-2);}
+  .row.unfunded{opacity:.62;}
+
+  .rank{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    font-size:30px;font-weight:800;color:var(--text-faint);line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .row[aria-expanded="true"] .rank,.row:hover .rank{color:var(--accent);}
+
+  /* officer gutter — luminous deployment markers */
+  .gutter{display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;}
+  .off-pip{width:22px;height:8px;border-radius:2px;background:var(--accent);box-shadow:0 0 12px rgba(255,176,0,.55);}
+  .gutter.empty{color:var(--warn);font-size:22px;line-height:1;font-weight:400;opacity:.5;}
+
+  .where .cause{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:13px;
+    color:var(--text);display:flex;align-items:center;gap:9px;
+  }
+  .tag-closure{
+    color:var(--warn);border:1px solid rgba(255,90,95,.4);border-radius:2px;
+    font-size:9.5px;padding:1px 5px;letter-spacing:.12em;
+  }
+  .where .addr{font-size:15px;margin-top:3px;color:var(--text);}
+  .where .meta{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+  .where .meta b{color:var(--text-dim);font-weight:600;}
+
+  .score{text-align:right;}
+  .score .n{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+  }
+  .score .formula{font-size:11px;color:var(--text-faint);margin-top:5px;font-variant-numeric:tabular-nums;}
+
+  /* ---------- expanded detail ---------- */
+  .detail{grid-column:1 / -1;overflow:hidden;max-height:0;transition:max-height .32s ease;}
+  .row[aria-expanded="true"] .detail{max-height:620px;}
+  .detail-inner{padding:18px 0 8px;border-top:1px dashed var(--hair-bright);margin-top:14px;}
+  .why{color:var(--text-dim);font-size:14px;max-width:64ch;margin:0 0 18px;}
+  .why b{color:var(--text);font-weight:600;}
+
+  .analogs-label{
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;
+    text-transform:uppercase;letter-spacing:.18em;font-size:11px;color:var(--accent);
+    font-weight:700;margin-bottom:10px;
+  }
+  .analog-grid{display:flex;flex-direction:column;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:3px;overflow:hidden;}
+  .analog{display:grid;grid-template-columns:100px 1fr 90px;gap:14px;background:var(--ground);padding:9px 14px;font-size:13px;align-items:center;}
+  .analog .ac{font-family:var(--mono);color:var(--teal);font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;}
+  .analog .aa{color:var(--text);}
+  .analog .aid{font-family:var(--mono);color:var(--text-faint);font-size:11px;text-align:right;}
+
+  .override{display:flex;align-items:center;gap:14px;margin-top:20px;flex-wrap:wrap;}
+  .override label{color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;}
+  .stepper{display:inline-flex;align-items:center;border:1px solid var(--hair-bright);border-radius:3px;overflow:hidden;}
+  .stepper button{
+    background:var(--ground-3);color:var(--text);border:none;width:34px;height:34px;
+    font-size:18px;cursor:pointer;font-family:inherit;line-height:1;
+  }
+  .stepper button:hover{background:var(--accent);color:var(--ground);}
+  .stepper button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .stepper .val{width:46px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;
+    font-family:"Arial Narrow",sans-serif;font-stretch:condensed;}
+  .ov-state{font-size:12px;color:var(--text-faint);}
+  .ov-state.changed{color:var(--accent);}
+
+  footer{margin-top:64px;border-top:1px solid var(--hair);padding-top:22px;color:var(--text-faint);font-size:12.5px;line-height:1.7;}
+  footer b{color:var(--text-dim);font-weight:600;}
+  kbd{font-family:var(--mono);background:var(--ground-3);border:1px solid var(--hair-bright);border-radius:3px;padding:1px 6px;font-size:11px;color:var(--text-dim);}
+
+  @media (max-width:620px){
+    .row{grid-template-columns:34px 1fr;grid-template-areas:"rank where" "gut score";row-gap:10px;}
+    .rank{grid-area:rank;} .where{grid-area:where;} .gutter{grid-area:gut;flex-direction:row;}
+    .score{grid-area:score;text-align:left;}
+    .analog{grid-template-columns:1fr;gap:3px;}
+    .analog .aid{text-align:left;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Planned-Event Traffic Ops · Days-out Playbook</div>
+    <h1>Deployment&nbsp;Ledger<br><span class="date" id="s-date">17 March 2024</span></h1>
+    <p class="standfirst">Where today's officers go, ranked by predicted delay against population exposure — and the past events behind every call. Review it, then override anything that doesn't match the ground.</p>
+  </header>
+
+  <section class="strip" aria-label="Day summary">
+    <div class="stat live"><div class="k" id="s-pool">12</div><div class="l">Officers available</div></div>
+    <div class="stat"><div class="k" id="s-choke">51</div><div class="l">Active chokepoints</div></div>
+    <div class="stat"><div class="k" id="s-planned">18</div><div class="l">Planned events</div></div>
+    <div class="stat"><div class="k" id="s-closures">14<span class="unit"> w/ closure</span></div><div class="l">Road closures filed</div></div>
+  </section>
+
+  <div class="poolbar" id="poolbar" aria-label="Officer allocation"></div>
+  <div class="poolnote" id="poolnote">Allocated across the top-ranked chokepoints. Reinforce or pull back below.</div>
+
+  <div class="ledger-head">
+    <h2>Chokepoint priority</h2>
+    <div class="legend">
+      <span><i class="dot amber"></i> Officer assigned</span>
+      <span><i class="dot none"></i> Unfunded — pool exhausted</span>
+    </div>
+  </div>
+
+  <div id="ledger"></div>
+
+  <footer>
+    <b>Reading this board.</b> Score = predicted delay (min) × population exposure. The pool covers the highest-scoring chokepoints first; ranks below the cutoff are unfunded until you free an officer. Every prediction lists the five most similar past events it was built from — if those analogs look wrong, trust your own read and override.<br><br>
+    <b>What the data shows today.</b> Ten of twelve officers land on a late-night VIP convoy down Mysore Road and the NICE corridor at 22:05 — a planned movement known days ahead. That is the wedge: foreknowledge of a demand shock the city controls the response to.<br><br>
+    <span style="color:var(--text-faint)">Phase 0 historical replay · synthetic-delay target · advisory only — no live action taken. Press <kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to expand.</span>
+  </footer>
+</div>
+
+<script>
+const DATA = {"day": "2026-06-27|2026-07-01", "pool": 12, "used": 12, "total_chokepoints": 8, "planned": 8, "closures": 6, "assignments": [{"rank": 1, "event_id": "SCRAPE0001", "cause": "public_event", "type": "planned", "addr": "Sree Kanteerava Stadium", "corridor": "Non-corridor", "start": "17:00", "predicted_delay": 57.0, "exposure": 2.0, "score": 114.1, "officers": 4, "closure": true, "analogs": [{"id": "FKID001578", "cause": "public_event", "addr": "Shivashankara Road"}, {"id": "FKID003704", "cause": "public_event", "addr": "Sultan Road"}, {"id": "FKID000946", "cause": "public_event", "addr": "Minsk Square"}, {"id": "FKID004486", "cause": "public_event", "addr": "\u0ca4\u0cb2\u0cc1\u0caa\u0cb2\u0cc1 \u0c9a\u0ccc\u0ca1\u0caf\u0ccd\u0caf \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID002483", "cause": "public_event", "addr": "\u0c95\u0cac\u0ccd\u0cac\u0ca8\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}]}, {"rank": 2, "event_id": "SCRAPE0000", "cause": "public_event", "type": "planned", "addr": "M. Chinnaswamy Stadium", "corridor": "Non-corridor", "start": "18:30", "predicted_delay": 56.6, "exposure": 2.0, "score": 113.1, "officers": 2, "closure": true, "analogs": [{"id": "FKID000737", "cause": "public_event", "addr": "Mother Teresa Circle"}, {"id": "FKID003758", "cause": "public_event", "addr": "A.K.S. Convention Hall"}, {"id": "FKID008130", "cause": "public_event", "addr": "\u0c9c\u0caf\u0cae\u0cb9\u0cb2\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID002483", "cause": "public_event", "addr": "\u0c95\u0cac\u0ccd\u0cac\u0ca8\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID000439", "cause": "public_event", "addr": "\u0c95\u0ccd\u0cb5\u0cbf\u0ca8\u0ccd\u0cb8\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}]}, {"rank": 3, "event_id": "SCRAPE0003", "cause": "procession", "type": "planned", "addr": "Bull Temple Road", "corridor": "Non-corridor", "start": "07:00", "predicted_delay": 46.7, "exposure": 2.0, "score": 93.5, "officers": 1, "closure": true, "analogs": [{"id": "FKID004750", "cause": "procession", "addr": "Bagaluru Main Road"}, {"id": "FKID006473", "cause": "procession", "addr": "RK Road Number 7"}, {"id": "FKID005353", "cause": "procession", "addr": "Dasarahalli Main Road"}, {"id": "FKID004184", "cause": "procession", "addr": "Sarjapura Main Road"}, {"id": "FKID002071", "cause": "procession", "addr": "Albert Victor Road"}]}, {"rank": 4, "event_id": "SCRAPE0005", "cause": "public_event", "type": "planned", "addr": "Cubbon Park", "corridor": "Non-corridor", "start": "05:30", "predicted_delay": 45.7, "exposure": 2.0, "score": 91.3, "officers": 1, "closure": true, "analogs": [{"id": "FKID007991", "cause": "public_event", "addr": "Risaldar Street"}, {"id": "FKID001680", "cause": "public_event", "addr": "\u0c95\u0ccd\u0cb5\u0cbf\u0ca8\u0ccd\u0cb8\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID001988", "cause": "public_event", "addr": "\u0c9a\u0cbf\u0ca8\u0ccd\u0ca8\u0cb8\u0ccd\u0cb5\u0cbe\u0cae\u0cbf \u0c95\u0ccd\u0cb0\u0cc0\u0ca1\u0cbe\u0c82\u0c97\u0ca3"}, {"id": "FKID000008", "cause": "public_event", "addr": "\u0cb2\u0cbf\u0c82\u0c95\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID001683", "cause": "public_event", "addr": "\u0c9a\u0cbf\u0ca8\u0ccd\u0ca8\u0cb8\u0ccd\u0cb5\u0cbe\u0cae\u0cbf \u0c95\u0ccd\u0cb0\u0cc0\u0ca1\u0cbe\u0c82\u0c97\u0ca3"}]}, {"rank": 5, "event_id": "SCRAPE0004", "cause": "protest", "type": "planned", "addr": "Freedom Park", "corridor": "Non-corridor", "start": "09:00", "predicted_delay": 44.7, "exposure": 2.0, "score": 89.4, "officers": 1, "closure": true, "analogs": [{"id": "FKID006539", "cause": "vehicle_breakdown", "addr": "Seshadri Road"}, {"id": "FKID007450", "cause": "protest", "addr": "Richmond Road"}, {"id": "FKID006807", "cause": "protest", "addr": "Corporation Circle"}, {"id": "FKID006030", "cause": "construction", "addr": "Race Course Road"}, {"id": "FKID007416", "cause": "protest", "addr": "Queens Road"}]}, {"rank": 6, "event_id": "SCRAPE0002", "cause": "public_event", "type": "planned", "addr": "Manyata Tech Park", "corridor": "Non-corridor", "start": "16:00", "predicted_delay": 49.7, "exposure": 1.6, "score": 79.5, "officers": 1, "closure": false, "analogs": [{"id": "FKID002416", "cause": "public_event", "addr": "HAL Airport Road"}, {"id": "FKID002408", "cause": "public_event", "addr": "HAL Airport Road"}, {"id": "FKID002410", "cause": "public_event", "addr": "HAL Airport Road"}, {"id": "FKID002411", "cause": "public_event", "addr": "2nd Main Road"}, {"id": "FKID008131", "cause": "public_event", "addr": "Service Road"}]}, {"rank": 7, "event_id": "SCRAPE0006", "cause": "public_event", "type": "planned", "addr": "Palace Grounds", "corridor": "Non-corridor", "start": "16:00", "predicted_delay": 49.4, "exposure": 1.6, "score": 79.1, "officers": 1, "closure": false, "analogs": [{"id": "FKID000439", "cause": "public_event", "addr": "\u0c95\u0ccd\u0cb5\u0cbf\u0ca8\u0ccd\u0cb8\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID008130", "cause": "public_event", "addr": "\u0c9c\u0caf\u0cae\u0cb9\u0cb2\u0ccd \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID004486", "cause": "public_event", "addr": "\u0ca4\u0cb2\u0cc1\u0caa\u0cb2\u0cc1 \u0c9a\u0ccc\u0ca1\u0caf\u0ccd\u0caf \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}, {"id": "FKID005754", "cause": "public_event", "addr": "Kumar Krupa Road"}, {"id": "FKID001064", "cause": "public_event", "addr": "\u0cac\u0cb3\u0ccd\u0cb3\u0cbe\u0cb0\u0cbf \u0cb0\u0cb8\u0ccd\u0ca4\u0cc6"}]}, {"rank": 8, "event_id": "SCRAPE0007", "cause": "construction", "type": "planned", "addr": "Marathahalli", "corridor": "Non-corridor", "start": "22:00", "predicted_delay": 30.1, "exposure": 1.4, "score": 42.2, "officers": 1, "closure": true, "analogs": [{"id": "FKID001815", "cause": "construction", "addr": "Outer Ring Road"}, {"id": "FKID000139", "cause": "construction", "addr": "Outer Ring Road"}, {"id": "FKID001002", "cause": "construction", "addr": "Outer Ring Road"}, {"id": "FKID001211", "cause": "construction", "addr": "HAL Airport Road"}, {"id": "FKID005239", "cause": "construction", "addr": "Outer Ring Road"}]}]};
+
+const fmtCause = c => c.replace(/_/g," ");
+const ledger = document.getElementById("ledger");
+
+DATA.assignments.forEach((a,i)=>{
+  const row = document.createElement("div");
+  row.className = "row" + (a.officers===0 ? " unfunded" : "");
+  row.tabIndex = 0;
+  row.setAttribute("role","button");
+  row.setAttribute("aria-expanded","false");
+
+  const gutter = a.officers>0
+    ? `<div class="gutter">${Array(a.officers).fill('<span class="off-pip"></span>').join("")}</div>`
+    : `<div class="gutter empty">—</div>`;
+
+  const analogRows = a.analogs.map(an=>`
+    <div class="analog">
+      <span class="ac">${fmtCause(an.cause)}</span>
+      <span class="aa">${an.addr||"—"}</span>
+      <span class="aid">${an.id}</span>
+    </div>`).join("");
+
+  const tightAnalogs = a.analogs.filter(an=>an.cause===a.cause).length;
+  const confidence = tightAnalogs>=3 ? "strong" : tightAnalogs>=1 ? "mixed" : "thin";
+  const confText = {
+    strong:"<b>Strong historical support</b> — most analogs match this event type.",
+    mixed:"<b>Mixed historical support</b> — analogs span several event types; weigh your own read.",
+    thin:"<b>Thin historical support</b> — few comparable past events. Operator judgment matters most here."
+  }[confidence];
+
+  row.innerHTML = `
+    <div class="rank">${String(a.rank).padStart(2,"0")}</div>
+    ${gutter}
+    <div class="where">
+      <div class="cause">${fmtCause(a.cause)}${a.closure?'<span class="tag-closure">CLOSURE</span>':''}</div>
+      <div class="addr">${a.addr}</div>
+      <div class="meta"><b>${a.corridor}</b> · onset ${a.start} · ${a.type}</div>
+    </div>
+    <div class="score">
+      <div class="n">${a.score.toFixed(0)}</div>
+      <div class="formula">${a.predicted_delay.toFixed(0)} min × ${a.exposure.toFixed(1)}</div>
+    </div>
+    <div class="detail"><div class="detail-inner">
+      <p class="why">${confText} Predicted to hold traffic <b>${a.predicted_delay.toFixed(0)} minutes</b> at peak; population exposure on <b>${a.corridor}</b> rated <b>${a.exposure.toFixed(1)}×</b>.</p>
+      <div class="analogs-label">Built from these past events</div>
+      <div class="analog-grid">${analogRows}</div>
+      <div class="override">
+        <label for="ov${i}">Officers on the ground</label>
+        <div class="stepper">
+          <button type="button" aria-label="Remove an officer" data-d="-1" data-i="${i}">−</button>
+          <span class="val" id="ov${i}">${a.officers}</span>
+          <button type="button" aria-label="Add an officer" data-d="1" data-i="${i}">+</button>
+        </div>
+        <span class="ov-state" id="ovs${i}">Recommended</span>
+      </div>
+    </div></div>`;
+
+  row.addEventListener("click",e=>{
+    if(e.target.closest(".override")) return; // don't toggle when adjusting
+    const open = row.getAttribute("aria-expanded")==="true";
+    row.setAttribute("aria-expanded", String(!open));
+  });
+  row.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();row.click();}
+    if(e.key==="ArrowDown"){e.preventDefault();(row.nextElementSibling||ledger.firstElementChild).focus();}
+    if(e.key==="ArrowUp"){e.preventDefault();(row.previousElementSibling||ledger.lastElementChild).focus();}
+  });
+  ledger.appendChild(row);
+});
+
+// pool meter
+const poolbar = document.getElementById("poolbar");
+function renderPool(){
+  const used = DATA.assignments.reduce((s,a)=>s+a.officers,0);
+  poolbar.innerHTML="";
+  for(let p=0;p<DATA.pool;p++){
+    const pip=document.createElement("span");
+    pip.className="pip"+(p<used?" on":"");
+    poolbar.appendChild(pip);
+  }
+  const note=document.getElementById("poolnote");
+  if(used>DATA.pool){
+    note.innerHTML=`<span style="color:var(--warn)">Over by ${used-DATA.pool}.</span> Pull officers from a lower-priority chokepoint before committing.`;
+  }else{
+    note.textContent=`${used} of ${DATA.pool} officers committed · ${DATA.pool-used} in reserve.`;
+  }
+}
+
+// populate masthead + summary from DATA when those fields are provided
+// (the bundled 17-Mar view keeps its richer static copy; generated views set them).
+function fillHeader(){
+  const fmtDate = d => {
+    const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(!m) return d;
+    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${+m[3]} ${months[+m[2]-1]} ${m[1]}`;
+  };
+  if(DATA.day){
+    const parts = String(DATA.day).split("|");
+    document.getElementById("s-date").textContent =
+      parts.length===2 ? `${fmtDate(parts[0])} – ${fmtDate(parts[1])}` : fmtDate(DATA.day);
+  }
+  document.getElementById("s-pool").textContent = DATA.pool;
+  document.getElementById("s-choke").textContent = DATA.total_chokepoints;
+  if(DATA.planned!=null) document.getElementById("s-planned").textContent = DATA.planned;
+  if(DATA.closures!=null)
+    document.getElementById("s-closures").innerHTML = DATA.closures + '<span class="unit"> w/ closure</span>';
+}
+fillHeader();
+renderPool();
+
+// override steppers
+ledger.addEventListener("click",e=>{
+  const btn=e.target.closest("button[data-i]");
+  if(!btn) return;
+  const i=+btn.dataset.i, d=+btn.dataset.d;
+  const a=DATA.assignments[i];
+  const next=Math.max(0,Math.min(6,a.officers+d));
+  a.officers=next;
+  document.getElementById("ov"+i).textContent=next;
+  const st=document.getElementById("ovs"+i);
+  const rec=DATA.assignments[i]._rec ?? (DATA.assignments[i]._rec = (i< 0?0:[1,1,1,1,1,1,1,1,1,1,1,1,0,0][i]));
+  if(next!==rec){st.textContent=`Override · was ${rec}`;st.classList.add("changed");}
+  else{st.textContent="Recommended";st.classList.remove("changed");}
+  // reflect in gutter
+  const row=ledger.children[i];
+  const g=row.querySelector(".gutter");
+  if(next>0){g.className="gutter";g.innerHTML=Array(next).fill('<span class="off-pip"></span>').join("");row.classList.remove("unfunded");}
+  else{g.className="gutter empty";g.textContent="—";row.classList.add("unfunded");}
+  renderPool();
+});
+</script>

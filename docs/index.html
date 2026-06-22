@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrowdWise — Event-Driven Congestion</title>
+<style>
+  :root{
+    --ground:#0E1418; --ground-2:#141C22; --ground-3:#1A242B;
+    --text:#E8EDF0; --text-dim:#8A99A3; --text-faint:#566069;
+    --accent:#FFB000; --teal:#2DD4BF; --hair:#26323A; --hair-bright:#34434C;
+    --cond:"Arial Narrow","Helvetica Neue",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--ground);color:var(--text);
+    font-family:"Inter","Segoe UI",system-ui,sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+    background-image:
+      radial-gradient(1000px 600px at 82% -10%, rgba(255,176,0,.08), transparent 60%),
+      radial-gradient(800px 700px at -5% 108%, rgba(45,212,191,.05), transparent 55%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:clamp(36px,7vw,90px) clamp(20px,5vw,40px) 80px;}
+  .eyebrow{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;
+    letter-spacing:.34em;font-size:12.5px;color:var(--accent);font-weight:700;
+    display:flex;align-items:center;gap:12px;}
+  .eyebrow::before{content:"";width:36px;height:2px;background:var(--accent);}
+  h1{font-family:var(--cond);font-stretch:condensed;font-weight:800;line-height:.94;
+    letter-spacing:-.01em;font-size:clamp(40px,8vw,80px);margin:.3em 0 .2em;text-transform:uppercase;}
+  h1 .hl{color:var(--accent);}
+  .lede{color:var(--text-dim);font-size:clamp(16px,1.8vw,20px);max-width:60ch;}
+  .lede b{color:var(--text);font-weight:600;}
+  .result{display:flex;gap:1px;background:var(--hair);border:1px solid var(--hair);
+    border-radius:5px;overflow:hidden;margin:38px 0 8px;flex-wrap:wrap;}
+  .r{background:var(--ground-2);padding:18px 24px;flex:1 1 200px;}
+  .r .k{font-family:var(--cond);font-stretch:condensed;font-size:clamp(30px,5vw,44px);
+    font-weight:800;line-height:1;}
+  .r .k.amber{color:var(--accent);}
+  .r .l{color:var(--text-faint);text-transform:uppercase;letter-spacing:.13em;font-size:10.5px;
+    margin-top:8px;font-weight:600;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:40px;}
+  a.card{display:block;text-decoration:none;background:var(--ground-2);border:1px solid var(--hair);
+    border-radius:6px;padding:24px;transition:transform .12s ease,border-color .15s ease;}
+  a.card:hover{transform:translateY(-3px);border-color:var(--accent);}
+  a.card:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .card .tag{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;
+    letter-spacing:.16em;font-size:11px;font-weight:700;color:var(--accent);}
+  .card h2{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;letter-spacing:.02em;
+    font-weight:800;font-size:23px;margin:8px 0 6px;color:var(--text);}
+  .card p{color:var(--text-dim);font-size:14px;}
+  .card .go{color:var(--accent);font-size:14px;font-weight:600;margin-top:14px;display:inline-block;}
+  .ghost{background:transparent;}
+  footer{margin-top:54px;border-top:1px solid var(--hair);padding-top:22px;
+    color:var(--text-faint);font-size:12.5px;line-height:1.7;}
+  footer a{color:var(--text-dim);}
+  @media (prefers-reduced-motion:reduce){a.card{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Planned-Event Traffic Operations</div>
+  <h1>Crowd<span class="hl">Wise</span></h1>
+  <p class="lede">Cities already know when the next concert, procession, or VIP convoy is coming. CrowdWise turns that <b>known event calendar</b> into a pre-positioned officer-deployment playbook — and proves with real data it delivers most where the city holds the advantage. <b>Decision-support for traffic centers, not autonomous control.</b></p>
+
+  <div class="result">
+    <div class="r"><div class="k">+4.1%</div><div class="l">less delay · all events</div></div>
+    <div class="r"><div class="k amber">+23.3%</div><div class="l">less delay · planned events</div></div>
+    <div class="r"><div class="k">8,173</div><div class="l">real events validated</div></div>
+  </div>
+
+  <div class="cards">
+    <a class="card" href="pitch.html">
+      <div class="tag">Start here</div>
+      <h2>The pitch</h2>
+      <p>One page: the problem, the wedge, and the result told visually.</p>
+      <span class="go">Open the pitch →</span>
+    </a>
+    <a class="card" href="operator_view.html">
+      <div class="tag">Live dashboard</div>
+      <h2>Operator ledger</h2>
+      <p>A real day's deployment plan — ranked chokepoints, the past events behind each call, and officer overrides.</p>
+      <span class="go">Open the dashboard →</span>
+    </a>
+    <a class="card" href="operator_view_scraped.html">
+      <div class="tag">Forward prediction</div>
+      <h2>Scraped-events plan</h2>
+      <p>The same dashboard, generated from upcoming events the model has never seen.</p>
+      <span class="go">Open the forecast →</span>
+    </a>
+    <a class="card ghost" href="https://github.com/ashwinrajan-159/CrowdWise">
+      <div class="tag">Source</div>
+      <h2>The code</h2>
+      <p>Pipeline, tests, design doc, and run instructions on GitHub.</p>
+      <span class="go">View the repository →</span>
+    </a>
+  </div>
+
+  <footer>
+    Phase 0 — historical replay. Validated by replaying past events with no live action, so ground truth stays uncontaminated. Built on the Bengaluru Traffic Police "Astram" event log. <a href="https://github.com/ashwinrajan-159/CrowdWise">github.com/ashwinrajan-159/CrowdWise</a>
+  </footer>
+</div>
+</body>
+</html>
