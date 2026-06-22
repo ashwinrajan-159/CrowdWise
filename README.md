@@ -18,6 +18,11 @@ agency has two things a general traffic app never will: *foreknowledge* (the eve
 calendar) and *control of the response* (officers, closures, signal timing) days
 in advance.
 
+### 🔗 Live demo: **https://ashwinrajan-159.github.io/CrowdWise/**
+
+Click through the pitch, the operator dashboard, and a deployment plan generated
+for upcoming events the model has never seen — no install needed.
+
 📐 Full rationale: [DESIGN.md](DESIGN.md) · 📊 Results & honest caveats: [RESULTS.md](RESULTS.md)
 
 ---
@@ -286,9 +291,12 @@ generates the same dashboard for *your* file.)
 ├── gridlock/              ← the pipeline package (10 modules, see table above)
 ├── tests/                 ← pytest suite (12 tests)
 ├── images/                ← README screenshots
-└── artifacts/
-    ├── operator_view.html ← the Deployment Ledger (operator-facing playbook)
-    └── pitch.html         ← single-page visual story of the project
+├── artifacts/             ← canonical dashboards + generated run outputs
+│   ├── operator_view.html          ← the Deployment Ledger (operator-facing playbook)
+│   ├── operator_view_scraped.html  ← plan generated from scraped upcoming events
+│   └── pitch.html                  ← single-page visual story of the project
+└── docs/                  ← published web mirror, served live by GitHub Pages
+    └── index.html …                (the https://ashwinrajan-159.github.io/CrowdWise/ site)
 ```
 
 ---
