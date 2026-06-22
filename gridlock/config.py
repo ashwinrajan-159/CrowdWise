@@ -9,8 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # The anonymized Astram event log shipped alongside this build.
-# Anonymized Astram event log. Repo ships the renamed file; the original long
-# filename is honored as a fallback for local runs.
+# Repo ships the renamed file; the original long filename is honored as a fallback.
 _CSV_CANDIDATES = [
     "astram_event_data_anonymized.csv",
     "Astram event data_anonymized - Astram event data_anonymizedb40ac87.csv",

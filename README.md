@@ -220,17 +220,35 @@ python run_phase0.py --walk-forward
 - `replay_log_<target>.csv` — the predicted / acted / observed triple per event
 - `summary_<target>.json` — KPIs plus run metadata
 
-**4. Run the tests:**
+**4. Predict on a new / upcoming events file.** This is the forward-looking
+mode — hand it a calendar of events that *haven't happened yet* (a sample ships
+with the repo) and it forecasts the chokepoints and writes a deployment dashboard
+for them:
+
+```bash
+python predict.py upcoming_events.csv
+# trains on all history, forecasts the new events, writes
+# artifacts/operator_view_upcoming.html
+```
+
+> A future event needs no outcome column — the outcome is exactly what's
+> predicted. Every input the model uses (cause, location, time, priority) is known
+> before a planned event happens. No accuracy number is produced here, because
+> future events have nothing to score against yet (the [lost-ground-truth
+> problem](#why-is-there-a-phase-0)) — accuracy is validated on history in step 2.
+
+**5. Run the tests:**
 
 ```bash
 pytest -q          # 12 tests pinning pipeline behavior
 ```
 
-**5. See the operator view.** Open [artifacts/operator_view.html](artifacts/operator_view.html)
+**6. See the operator view.** Open [artifacts/operator_view.html](artifacts/operator_view.html)
 in a browser — the **Deployment Ledger** for 17 Mar 2024. It shows the model's
 most striking real call: 10 of 12 officers sent to a late-night VIP convoy down
 Mysore Road known days ahead, each recommendation auditable down to the five past
-events behind it, and every assignment overridable by the duty engineer.
+events behind it, and every assignment overridable by the duty engineer. (Step 4
+generates the same dashboard for *your* file.)
 
 ---
 
@@ -241,9 +259,11 @@ events behind it, and every assignment overridable by the duty engineer.
 ├── README.md              ← you are here
 ├── DESIGN.md              ← full design doc: thesis, principles, roadmap, risks
 ├── RESULTS.md             ← the wedge proof + honest caveats
-├── run_phase0.py          ← end-to-end runner (the entry point)
+├── run_phase0.py          ← end-to-end runner: validate on history (the entry point)
+├── predict.py             ← forward prediction: chokepoints for a NEW events file
 ├── requirements.txt
 ├── astram_event_data_anonymized.csv   ← the real (anonymized) event log
+├── upcoming_events.csv    ← sample 'future' events for predict.py
 ├── gridlock/              ← the pipeline package (10 modules, see table above)
 ├── tests/                 ← pytest suite (12 tests)
 ├── images/                ← README screenshots
