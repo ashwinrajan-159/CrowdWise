@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+artifacts/replay_log_*.csv
+artifacts/summary_*.json
+artifacts/walkforward_log_*.csv
+.venv/
