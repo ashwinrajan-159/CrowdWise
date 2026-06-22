@@ -3,10 +3,14 @@
 ### A planned-event traffic-operations system
 
 > Every city already knows when the next concert, procession, VIP convoy, or
-> roadwork is coming — it's on a calendar weeks out. This project turns that
-> **known event calendar** into a pre-positioned, accountable officer-deployment
-> playbook, and proves with real data that it delivers most exactly where the
-> city holds the advantage.
+> roadwork is coming — it's on a calendar weeks out. This project turns a city's
+> **known event calendar** into coordinated, pre-positioned operational playbooks
+> spanning traffic police, road agencies, and event organizers — and proves with
+> real data that it delivers most exactly where the city holds the advantage.
+
+> **The system is designed as a decision-support platform for traffic management
+> centers, not as an autonomous traffic-control system.** Every recommendation is
+> reviewed and overridable by the duty engineer.
 
 **This is deliberately *not* another real-time congestion predictor.** That space
 is saturated and commoditized. The wedge here is the **planned event**, where the
@@ -15,6 +19,49 @@ calendar) and *control of the response* (officers, closures, signal timing) days
 in advance.
 
 📐 Full rationale: [DESIGN.md](DESIGN.md) · 📊 Results & honest caveats: [RESULTS.md](RESULTS.md)
+
+---
+
+<table>
+<tr>
+<td width="50%"><a href="artifacts/pitch.html"><img src="images/pitch.png" alt="Pitch one-pager — the planned-event wedge" width="100%"></a><p align="center"><sub><b>The pitch</b> — <a href="artifacts/pitch.html">pitch.html</a></sub></p></td>
+<td width="50%"><a href="artifacts/operator_view.html"><img src="images/operator.png" alt="Operator Deployment Ledger dashboard" width="100%"></a><p align="center"><sub><b>The operator dashboard</b> — <a href="artifacts/operator_view.html">operator_view.html</a></sub></p></td>
+</tr>
+</table>
+
+---
+
+## How it works — at a glance
+
+```
+┌─────────────────────┐
+│   Event Calendar    │   known days/weeks ahead
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Feature Engineering │   time, space, event-type, concurrency
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ GBM + Analog Engine │   LightGBM forecast + similar past events
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│  Traffic Forecast   │   predicted delay × population exposure
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Playbook Generator  │   ranked chokepoints + officer allocation
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│ Historical Replay   │   score the playbook on un-intervened history
+└──────────┬──────────┘
+           ↓
+┌─────────────────────┐
+│   KPI Evaluation    │   measure lift vs. doing nothing
+└─────────────────────┘
+```
 
 ---
 
@@ -30,6 +77,28 @@ log** — 8,173 real events, 467 planned, over 5 months:
 
 **~6× more value on planned events.** Same model, same fixed officer pool —
 pointed where the city has foreknowledge it controls. That is the wedge, quantified.
+
+---
+
+## The problem
+
+Cities already know about many disruptive events — concerts, festivals,
+processions, VIP movements, and roadworks — days or weeks before they occur. Yet
+traffic management for these events remains largely experience-driven, leading to
+inconsistent deployments, avoidable congestion, and loss of institutional
+knowledge when a veteran officer retires.
+
+The core gap: **cities cannot reliably estimate the traffic impact of upcoming
+events**, so they cannot pre-position resources with confidence. Foreknowledge
+exists; the system to act on it does not.
+
+## Why it matters
+
+- ⏱️ **Faster network clearance** after events
+- 🚗 **Reduced vehicle-hours of delay** for the public
+- 👮 **Better utilization** of limited traffic personnel
+- 🧠 **Preservation of expert traffic-engineer knowledge** — captured in playbooks, not lost when people leave
+- 🤝 **Improved coordination** between police, road agencies, transit, and event organizers
 
 ---
 
@@ -67,10 +136,11 @@ says the idea works. It does — see the result above.
 
 ---
 
-## How it works
+## How it works — in detail
 
 The pipeline is one straight line — train on history, generate the playbook,
-replay it, measure whether it helped:
+replay it, measure whether it helped. The module map below expands the
+at-a-glance diagram up top:
 
 ```
 ingest → features → target → analogs → model → playbook → replay → lift
@@ -176,6 +246,7 @@ events behind it, and every assignment overridable by the duty engineer.
 ├── astram_event_data_anonymized.csv   ← the real (anonymized) event log
 ├── gridlock/              ← the pipeline package (10 modules, see table above)
 ├── tests/                 ← pytest suite (12 tests)
+├── images/                ← README screenshots
 └── artifacts/
     ├── operator_view.html ← the Deployment Ledger (operator-facing playbook)
     └── pitch.html         ← single-page visual story of the project
