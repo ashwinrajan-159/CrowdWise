@@ -1,18 +1,38 @@
-# Planned-Event Traffic Operations System
+# 🚦 Event-Driven Congestion — Planned-Event Traffic Operations
 
-A planning-and-coordination system that converts a city's **known event calendar**
-(concerts, games, festivals, roadworks, processions) into pre-positioned,
-continuously-adjusted operational playbooks — validated by rigorous historical
-replay and improving with each event cycle.
+> Every city already knows when the next concert, procession, VIP convoy, or
+> roadwork is coming. We turn that **known event calendar** into a
+> pre-positioned officer-deployment playbook — and prove it pays off most
+> exactly where the city has the advantage.
 
-The wedge is **planned events**, where the agency holds an information advantage
-no general traffic app exploits well. Unplanned incidents are a secondary mode
-the same system degrades into — not the headline. See [DESIGN.md](DESIGN.md) for
-the full design rationale and binding principles.
+**Not another real-time congestion predictor.** That space is saturated and
+commoditized. Our wedge is **planned events**, where the agency holds an
+information advantage no general traffic app exploits — and controls the levers
+(officers, closures, signals) to act on it days ahead.
 
-This repository contains **Phase 0 — Historical Replay**: the cheapest honest
-validation of the wedge, grounded on a real anonymized event log (Bengaluru
-Traffic Police "Astram", 8,173 events over 2023-11 → 2024-04, 467 planned).
+### The result that matters
+
+Validated by historical replay on **8,173 real events** (Bengaluru Traffic
+Police "Astram" log, 467 planned, 5 months):
+
+| | System reduces delay by |
+|---|---|
+| Across all events | **+4.1%** |
+| **On planned events** | **+23.3%** |
+
+**~6× more value on planned events — the wedge, quantified.** → [full results & honest caveats](RESULTS.md)
+
+### See it run
+
+The system produces an operator-reviewable **Deployment Ledger** — ranked
+chokepoints, the score behind each, the five past events that justify it, and a
+one-tap override. → `artifacts/operator_view.html`
+
+The standout real call: on 17 Mar 2024, **10 of 12 officers** go to a late-night
+VIP convoy down Mysore Road known days ahead. That's foreknowledge of a demand
+shock the city controls the response to.
+
+📐 Full design rationale & binding principles: [DESIGN.md](DESIGN.md)
 
 ---
 
