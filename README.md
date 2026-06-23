@@ -10,7 +10,7 @@ control centers, not autonomous control.**
 > app does: *foreknowledge* (the calendar) and *control of the response* (officers,
 > closures, signals) days ahead.
 
-🔗 **Live app:** *(your Render URL, e.g. https://crowdwise.onrender.com)*
+🔗 **Live app: https://crowdwise-hvto.onrender.com**
 📐 [DESIGN.md](DESIGN.md) · 📊 [RESULTS.md](RESULTS.md)
 
 ![Operator dashboard](images/operator.png)
