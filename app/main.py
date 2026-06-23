@@ -37,6 +37,19 @@ async def lifespan(app: FastAPI):
             print("[startup] model warmed and ready")
         except Exception as e:
             print(f"[startup] WARM FAILED: {e}")
+        # Replace the instant offline seed with a live statewide forecast, so the
+        # app loads with real PredictHQ events (not the Bengaluru sample) after a
+        # cold start — no manual Refresh needed. Runs in this bg thread; the seed
+        # remains the instant-paint fallback if this is slow or fails.
+        if STATE.ready:
+            try:
+                view = pipeline.scrape_to_view()
+                with STATE.lock:
+                    STATE.latest_view = view
+                print(f"[startup] live forecast loaded ({view['meta']['source']}, "
+                      f"{view['meta']['event_count']} events)")
+            except Exception as e:
+                print(f"[startup] live forecast skipped (kept seed): {e}")
         if config.ENABLE_SCHEDULER and STATE.ready:
             scheduler.start()
 

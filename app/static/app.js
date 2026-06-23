@@ -48,13 +48,24 @@ function pinIcon(color) {
 }
 
 /* ---------------- data loading ---------------- */
+let _seedPolls = 0;
 async function loadCurrent() {
   spin(true);
   try {
     const r = await fetch("api/events/current");
     if (r.status === 503) { setSource("warming up — training model…"); setTimeout(loadCurrent, 2500); return; }
     if (!r.ok) throw new Error(`server ${r.status}`);
-    render(await r.json());
+    const view = await r.json();
+    render(view);
+    // On a cold start the server first serves the offline seed, then loads the
+    // live statewide forecast a few seconds later. If we got the seed, poll a few
+    // times so the page upgrades to live data on its own — no manual Refresh.
+    const src = view.meta && view.meta.source;
+    if (src === "scrape:cache" && _seedPolls < 6) {
+      _seedPolls++;
+      setSource("loading live events…");
+      setTimeout(loadCurrent, 3000);
+    }
   } catch (e) {
     toast("Could not load forecast: " + e.message, true);
   } finally { spin(false); }
