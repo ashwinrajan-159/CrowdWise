@@ -5,6 +5,27 @@ let MAP = null, MARKERS = null, CURRENT = null;
 const $ = id => document.getElementById(id);
 const fmtCause = c => (c || "").replace(/_/g, " ");
 
+/* severity in [0,1] -> color on a green -> amber -> red ramp */
+function severityColor(t) {
+  t = Math.max(0, Math.min(1, t));
+  // 0 = green (140°), .5 = amber (45°), 1 = red (0°)
+  const hue = t < 0.5 ? 140 - (140 - 45) * (t / 0.5) : 45 - 45 * ((t - 0.5) / 0.5);
+  return `hsl(${hue}, 85%, 52%)`;
+}
+
+/* an SVG teardrop pin, tinted by severity, as a Leaflet divIcon */
+function pinIcon(color) {
+  const svg =
+    `<svg width="26" height="38" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">` +
+    `<path d="M13 0C6 0 .5 5.4.5 12.2.5 21 13 38 13 38s12.5-17 12.5-25.8C25.5 5.4 20 0 13 0z" ` +
+    `fill="${color}" stroke="#0E1418" stroke-width="1.5"/>` +
+    `<circle cx="13" cy="12.2" r="4.6" fill="#0E1418"/></svg>`;
+  return L.divIcon({
+    html: svg, className: "cw-pin",
+    iconSize: [26, 38], iconAnchor: [13, 38], popupAnchor: [0, -34],
+  });
+}
+
 /* ---------------- data loading ---------------- */
 async function loadCurrent() {
   spin(true);
@@ -95,7 +116,13 @@ function renderPool(v) {
 
 function renderLedger(v) {
   const ledger = $("ledger"); ledger.innerHTML = "";
+  const scores = v.assignments.map(a => a.score);
+  const sMax = Math.max(1, ...scores), sMin = Math.min(...scores, 0);
+  const sSpan = Math.max(1, sMax - sMin);
   v.assignments.forEach((a, i) => {
+    const sev = (a.score - sMin) / sSpan;           // 0..1 within this forecast
+    const barColor = a.closure ? "#FF5A5F" : severityColor(sev);
+    const barPct = Math.round(18 + 82 * sev);        // floor so low bars still read
     const row = document.createElement("div");
     row.className = "row" + (a.officers === 0 ? " unfunded" : "");
     row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-expanded", "false");
@@ -122,8 +149,11 @@ function renderLedger(v) {
         <div class="addr">${a.addr}</div>
         <div class="meta"><b>${a.corridor}</b> · onset ${a.start} · ${a.type}${coords}</div>
       </div>
-      <div class="score"><div class="n">${Math.round(a.score)}</div>
-        <div class="formula">${Math.round(a.predicted_delay)} min × ${a.exposure.toFixed(1)}</div></div>
+      <div class="score">
+        <div class="sevbar" title="Congestion severity"><span style="width:${barPct}%;background:${barColor}"></span></div>
+        <div class="sevrow"><span class="n">${Math.round(a.score)}</span>
+          <span class="formula">${Math.round(a.predicted_delay)} min × ${a.exposure.toFixed(1)}</span></div>
+      </div>
       <div class="detail"><div class="detail-inner">
         <p class="why">${conf} Predicted to hold traffic <b>${Math.round(a.predicted_delay)} minutes</b> at peak; exposure on <b>${a.corridor}</b> rated <b>${a.exposure.toFixed(1)}×</b>.</p>
         <div class="analogs-label">Built from these past events</div>
@@ -177,21 +207,36 @@ function renderMap(v) {
   MARKERS = L.layerGroup().addTo(MAP);
 
   const pts = v.assignments.filter(a => a.lat != null && a.lon != null);
-  const max = Math.max(1, ...pts.map(a => a.score));
+  const scores = pts.map(a => a.score);
+  const max = Math.max(1, ...scores), min = Math.min(...scores, 0);
+  const span = Math.max(1, max - min);
+
+  // Fan out events that share (almost) identical coordinates so each pin is
+  // visible and clickable instead of stacking into one blob.
+  const seen = new Map();
+  const KEY = a => `${a.lat.toFixed(4)},${a.lon.toFixed(4)}`;
   pts.forEach(a => {
-    const hot = a.score / max;
-    const radius = 9 + 20 * hot;
-    const color = a.closure ? "#FF5A5F" : `hsl(${42 - 42 * hot}, 100%, 50%)`; // amber→red by score
-    L.circleMarker([a.lat, a.lon], {
-      radius, color, weight: 2, fillColor: color, fillOpacity: 0.5
-    }).bindPopup(
-      `<b>#${a.rank} ${fmtCause(a.cause)}</b><br>${a.addr}<br>` +
-      `delay ${Math.round(a.predicted_delay)} min · score ${Math.round(a.score)}<br>` +
-      `officers ${a.officers}${a.closure ? " · CLOSURE" : ""}`
-    ).addTo(MARKERS);
+    const k = KEY(a);
+    const n = seen.get(k) || 0;
+    seen.set(k, n + 1);
+    let lat = a.lat, lon = a.lon;
+    if (n > 0) {                       // 2nd+ event at this venue: ring it outward
+      const ang = (n * 2.399);         // golden-angle spread, avoids overlap
+      const rad = 0.012 + 0.004 * n;   // ~1.3km steps
+      lat += rad * Math.cos(ang);
+      lon += rad * Math.sin(ang) / Math.cos(a.lat * Math.PI / 180);
+    }
+    const sev = (a.score - min) / span;            // 0..1 within this forecast
+    const color = a.closure ? "#FF5A5F" : severityColor(sev);
+    L.marker([lat, lon], { icon: pinIcon(color), riseOnHover: true })
+      .bindPopup(
+        `<b>#${a.rank} ${fmtCause(a.cause)}</b><br>${a.addr}<br>` +
+        `delay ${Math.round(a.predicted_delay)} min · score ${Math.round(a.score)}<br>` +
+        `officers ${a.officers}${a.closure ? " · CLOSURE" : ""}`
+      ).addTo(MARKERS);
   });
 
-  if (pts.length) MAP.fitBounds(L.latLngBounds(pts.map(a => [a.lat, a.lon])).pad(0.25));
+  if (pts.length) MAP.fitBounds(L.latLngBounds(pts.map(a => [a.lat, a.lon])).pad(0.3));
   else MAP.setView([12.97, 77.59], 11); // Bengaluru fallback (empty fitBounds throws)
   setTimeout(() => MAP.invalidateSize(), 100);
 }

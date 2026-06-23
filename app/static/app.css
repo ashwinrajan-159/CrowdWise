@@ -72,6 +72,9 @@ input[type=file]{display:none;}
 .leaflet-popup-content b{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;
   letter-spacing:.04em;color:var(--accent);}
 .leaflet-container{font-family:"Inter",system-ui,sans-serif;}
+/* teardrop pin divIcon — clear Leaflet's default white box, add a soft drop shadow */
+.cw-pin{background:none;border:none;}
+.cw-pin svg{filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));}
 
 /* pool meter */
 .poolbar{display:flex;gap:5px;margin:0 0 4px;flex-wrap:wrap;}
@@ -80,7 +83,7 @@ input[type=file]{display:none;}
 .poolnote{color:var(--text-faint);font-size:12px;letter-spacing:.04em;margin:4px 0 14px;}
 
 /* ledger */
-.row{display:grid;grid-template-columns:42px 50px 1fr auto;gap:0 16px;align-items:center;
+.row{display:grid;grid-template-columns:42px 50px 1fr 130px;gap:0 16px;align-items:center;
   border-top:1px solid var(--hair);padding:15px 4px;cursor:pointer;position:relative;
   transition:background .15s ease;}
 .row:last-of-type{border-bottom:1px solid var(--hair);}
@@ -102,10 +105,16 @@ input[type=file]{display:none;}
   font-size:9.5px;padding:1px 5px;letter-spacing:.12em;}
 .where .addr{font-size:15px;margin-top:3px;color:var(--text);}
 .where .meta{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
-.score{text-align:right;}
-.score .n{font-family:var(--cond);font-stretch:condensed;font-size:28px;font-weight:800;line-height:1;
+.score{text-align:right;min-width:124px;}
+/* severity progress bar — fills + colors green->amber->red by congestion severity */
+.sevbar{height:9px;width:100%;background:var(--ground-3);border:1px solid var(--hair-bright);
+  border-radius:5px;overflow:hidden;}
+.sevbar span{display:block;height:100%;border-radius:5px;transition:width .4s ease;
+  box-shadow:0 0 8px rgba(255,176,0,.25);}
+.sevrow{display:flex;align-items:baseline;justify-content:flex-end;gap:8px;margin-top:6px;}
+.score .n{font-family:var(--cond);font-stretch:condensed;font-size:22px;font-weight:800;line-height:1;
   font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
-.score .formula{font-size:11px;color:var(--text-faint);margin-top:5px;font-variant-numeric:tabular-nums;}
+.score .formula{font-size:10.5px;color:var(--text-faint);font-variant-numeric:tabular-nums;}
 
 /* expanded detail */
 .detail{grid-column:1 / -1;overflow:hidden;max-height:0;transition:max-height .32s ease;}
