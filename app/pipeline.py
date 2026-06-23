@@ -10,6 +10,7 @@ import csv
 import io
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -19,6 +20,12 @@ from predict import train_on_history, predict_new
 
 from app import config
 from app.cache import STATE
+
+# Accumulating store of events the app has seen (scraped/uploaded). As real-world
+# events recede into the past, they become extra TRAINING history — this is the
+# "improves with each event cycle" loop. We only ever retrain on events whose
+# start time has passed (real occurrences), never on future guesses.
+SEEN_EVENTS = Path(__file__).resolve().parent.parent / "seen_events.csv"
 
 
 def _now_iso() -> str:
@@ -124,6 +131,7 @@ def scrape_to_view() -> dict:
     if not rows:
         raise RuntimeError("no events available (scrape empty and cache empty)")
 
+    record_seen(rows)  # accumulate for the retrain-as-history-grows loop
     new_df, new_rep = _rows_to_df(rows)
     if new_rep.kept_rows == 0:
         raise RuntimeError("scraped events failed ingest validation")
@@ -132,3 +140,65 @@ def scrape_to_view() -> dict:
     view["meta"] = {"source": f"scrape:{source}", "generated_at": _now_iso(),
                     "event_count": new_rep.kept_rows}
     return view
+
+
+def record_seen(rows: list[dict]) -> None:
+    """Append scraped/uploaded rows to the seen-events store (dedup by id).
+
+    Best-effort: a read-only filesystem (some hosts) just skips persistence.
+    """
+    if not rows:
+        return
+    try:
+        existing_ids = set()
+        if SEEN_EVENTS.exists():
+            prev = pd.read_csv(SEEN_EVENTS, dtype=str, keep_default_na=False)
+            existing_ids = set(prev.get("id", pd.Series([], dtype=str)))
+        fresh = [r for r in rows if str(r.get("id")) not in existing_ids]
+        if not fresh:
+            return
+        fieldnames = sorted({k for r in rows for k in r})
+        write_header = not SEEN_EVENTS.exists()
+        with SEEN_EVENTS.open("a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=fieldnames)
+            if write_header:
+                w.writeheader()
+            w.writerows(fresh)
+    except Exception as e:
+        print(f"[seen] could not persist seen events (non-fatal): {e}")
+
+
+def retrain() -> dict:
+    """Rebuild history (original log + PAST seen events) and refit the model.
+
+    Only events whose start time has already passed are added as training history —
+    we learn from what actually happened, never from future guesses. The refit is
+    ~1-2s; the new booster is swapped into the cache atomically under the lock.
+    Returns a small summary.
+    """
+    base_df, base_rep = load_events(CFG.data_csv)
+    added = 0
+    hist_df = base_df
+
+    if SEEN_EVENTS.exists():
+        try:
+            seen_df, _ = load_events(SEEN_EVENTS)
+            now = pd.Timestamp.now(tz="UTC")
+            past = seen_df[seen_df["start_dt"].notna() & (seen_df["start_dt"] <= now)]
+            if len(past):
+                # de-dup against the base log by event_id, then append
+                past = past[~past["event_id"].isin(set(base_df["event_id"]))]
+                if len(past):
+                    hist_df = pd.concat([base_df, past], ignore_index=True)
+                    added = len(past)
+        except Exception as e:
+            print(f"[retrain] seen-events merge skipped: {e}")
+
+    model = train_on_history(hist_df, CFG)
+    with STATE.lock:
+        STATE.hist_df = hist_df.reset_index(drop=True)
+        STATE.model = model
+    summary = {"base_events": base_rep.kept_rows, "added_from_seen": added,
+               "history_total": len(hist_df), "retrained_at": _now_iso()}
+    print(f"[retrain] refit on {len(hist_df)} events (+{added} newly seen)")
+    return summary

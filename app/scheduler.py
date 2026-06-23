@@ -11,9 +11,19 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from app import config
 from app.cache import STATE
-from app.pipeline import scrape_to_view
+from app.pipeline import scrape_to_view, retrain
 
 _sched: BackgroundScheduler | None = None
+
+
+def retrain_job() -> None:
+    """Daily refit on the grown event history. Never raises."""
+    if not STATE.ready:
+        return
+    try:
+        retrain()
+    except Exception as e:
+        print(f"[scheduler] retrain skipped: {e}")
 
 
 def refresh_job() -> None:
@@ -38,8 +48,12 @@ def start() -> None:
     _sched = BackgroundScheduler(daemon=True)
     _sched.add_job(refresh_job, "interval", minutes=config.REFRESH_MINUTES,
                    max_instances=1, coalesce=True, id="refresh")
+    # daily retrain-as-history-grows (refit on events that have since passed)
+    _sched.add_job(retrain_job, "interval", hours=config.RETRAIN_HOURS,
+                   max_instances=1, coalesce=True, id="retrain")
     _sched.start()
-    print(f"[scheduler] started — refreshing every {config.REFRESH_MINUTES} min")
+    print(f"[scheduler] started — refresh every {config.REFRESH_MINUTES} min, "
+          f"retrain every {config.RETRAIN_HOURS} h")
 
 
 def stop() -> None:

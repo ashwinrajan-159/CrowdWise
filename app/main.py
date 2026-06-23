@@ -89,5 +89,21 @@ def scrape():
     return view
 
 
+@app.post("/api/retrain")
+def retrain():
+    """Refit the model on the original log + events seen since (that have passed).
+
+    This is the 'improves with each event cycle' loop — it grows the training
+    history, it does NOT learn from acted-upon outcomes (that needs shadow-mode
+    evaluation; see DESIGN.md on the lost-ground-truth problem).
+    """
+    if not STATE.ready:
+        raise HTTPException(status_code=503, detail="warming up")
+    try:
+        return pipeline.retrain()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"retrain failed: {e}")
+
+
 # Frontend last, so /api/* routes win.
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")

@@ -290,9 +290,12 @@ uvicorn app.main:app --reload             # then open http://127.0.0.1:8000
 ```
 
 What you get at `http://127.0.0.1:8000`:
-- A **Leaflet map** of chokepoints, sized/colored by predicted impact (red = closure).
-- The ranked **deployment ledger** beside it — click a chokepoint for the past events
-  behind the forecast and an officer-override stepper.
+- A **Leaflet map** of chokepoints as pins, colored on a **green → amber → red
+  severity ramp** (closures forced red); events at the same venue fan out so each
+  is clickable.
+- The ranked **deployment ledger** beside it — each row shows a **severity progress
+  bar** (fills + colors by severity) next to the score; click a chokepoint for the
+  past events behind the forecast and an officer-override stepper.
 - **Upload event CSV** — drop in any event calendar (the required columns are
   `id, event_type, event_cause, latitude, longitude, start_datetime`) and the map +
   ledger re-render for it.
@@ -300,8 +303,22 @@ What you get at `http://127.0.0.1:8000`:
   and re-forecasts. This updates **event forecasts, not live traffic** — a real
   connected-vehicle feed is the designed-for next phase.
 
+**New events / new dates.** The forecast is not tied to a fixed date — any event the
+app receives (uploaded or scraped) is forecast and plotted, including future dates.
+The model predicts from *patterns* (cause, hour-of-day, day-of-year, corridor) learned
+on the historical window, so it generalises to new dates.
+
+**Retrain as history grows.** Scraped/seen events are accumulated; once an event's date
+has passed it becomes extra *training history*. `POST /api/retrain` (and a daily
+scheduler job) refits the model on the original log + those newly-passed events — the
+"improves with each event cycle" loop. Refit is ~1–2s and swaps the cached model
+atomically. **Important boundary:** this grows the *event history* it learns from; it
+does **not** learn from acted-upon traffic *outcomes* — that would hit the
+[lost-ground-truth problem](#why-is-there-a-phase-0) and needs shadow-mode evaluation
+(Phase 2).
+
 API: `GET /api/events/current`, `POST /api/predict` (multipart CSV), `POST /api/scrape`,
-`GET /api/health`.
+`POST /api/retrain`, `GET /api/health`.
 
 **Deploy (Render):** the repo ships [render.yaml](render.yaml), a [Procfile](Procfile),
 and [.env.example](.env.example). Connect the repo on Render, set `PREDICTHQ_TOKEN` as a

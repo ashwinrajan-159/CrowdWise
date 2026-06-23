@@ -24,6 +24,9 @@ PREDICTHQ_TOKEN = os.getenv("PREDICTHQ_TOKEN", "").strip()
 # Scheduled-refresh cadence (event forecasts, not live traffic).
 REFRESH_MINUTES = _int("REFRESH_MINUTES", 60)
 
+# Retrain-as-history-grows cadence, in hours (refit on events that have passed).
+RETRAIN_HOURS = _int("RETRAIN_HOURS", 24)
+
 # City to scrape events for.
 CITY = os.getenv("CITY", "Bengaluru").strip() or "Bengaluru"
 

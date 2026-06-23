@@ -9,4 +9,5 @@ artifacts/operator_view_scraped.html
 .venv/
 .geocode_cache.json
 scraped_events.csv
+seen_events.csv
 .env
