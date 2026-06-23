@@ -148,7 +148,9 @@ input[type=file]{display:none;}
 .legend{display:flex;gap:16px;color:var(--text-faint);font-size:11px;letter-spacing:.05em;}
 .legend span{display:inline-flex;align-items:center;gap:6px;}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
-.dot.amber{background:var(--accent);}
+.dot.amber{background:hsl(140,85%,52%);}   /* low (green end of ramp) */
+.dot.med{background:hsl(45,85%,52%);}      /* medium (amber) */
+.dot.red{background:var(--warn);}          /* high / closure */
 .dot.none{background:var(--ground-3);border:1px solid var(--hair-bright);}
 
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ground-3);

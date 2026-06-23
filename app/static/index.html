@@ -26,8 +26,7 @@
   </div>
 
   <section class="strip" aria-label="Summary">
-    <div class="stat live"><div class="k" id="s-pool">—</div><div class="l">Officers available</div></div>
-    <div class="stat"><div class="k" id="s-choke">—</div><div class="l">Chokepoints</div></div>
+    <div class="stat live"><div class="k" id="s-choke">—</div><div class="l">Chokepoints</div></div>
     <div class="stat"><div class="k" id="s-planned">—</div><div class="l">Planned events</div></div>
     <div class="stat"><div class="k" id="s-closures">—</div><div class="l">Road closures</div></div>
   </section>
@@ -41,18 +40,18 @@
       <div class="ledger-head">
         <h2>Chokepoint priority</h2>
         <div class="legend">
-          <span><i class="dot amber"></i> Officer assigned</span>
-          <span><i class="dot none"></i> Unfunded</span>
+          <span><i class="dot amber"></i> low</span>
+          <span><i class="dot med"></i> medium</span>
+          <span><i class="dot red"></i> high / closure</span>
         </div>
       </div>
-      <div class="poolbar" id="poolbar" aria-label="Officer allocation"></div>
       <div class="poolnote" id="poolnote"></div>
       <div id="ledger"></div>
     </div>
   </div>
 
   <footer>
-    <b>Reading this board.</b> Score = predicted delay (min) × population exposure. The officer pool covers the highest-scoring chokepoints first; ranks below the cutoff are unfunded until you free an officer. Each prediction lists the most similar past events it was built from — if those analogs look wrong, override it.<br><br>
+    <b>Reading this board.</b> Score = predicted delay (min) × population exposure; the bar shows each chokepoint's severity. The system <i>suggests</i> officers by severity — the monitor assigns the final number per chokepoint with the +/− stepper (no fixed pool). Each prediction lists the most similar past events it was built from; if those analogs look wrong, adjust.<br><br>
     <b>What "refresh" does.</b> It re-scrapes the upcoming event calendar and re-forecasts — it updates <i>event forecasts</i>, not live traffic state. A real connected-vehicle feed is the designed-for next phase.
   </footer>
 </div>

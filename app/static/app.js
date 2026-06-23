@@ -70,8 +70,8 @@ async function upload(file) {
 function render(view) {
   CURRENT = view;
   fillHeader(view);
-  renderPool(view);
-  renderLedger(view);
+  renderLedger(view);   // seeds severity-based officer suggestions
+  renderTally(view);    // sums what was suggested/assigned
   renderMap(view);
   setSource(view.meta);
 }
@@ -83,7 +83,6 @@ function fmtDate(d) {
   return `${+m[3]} ${months[+m[2]-1]} ${m[1]}`;
 }
 function fillHeader(v) {
-  $("s-pool").textContent = v.pool;
   $("s-choke").textContent = v.total_chokepoints;
   $("s-planned").textContent = v.planned != null ? v.planned : "—";
   $("s-closures").textContent = v.closures != null ? v.closures : "—";
@@ -101,17 +100,19 @@ function setSource(meta) {
   el.className = "source-badge" + (src === "upload" ? " upload" : "");
 }
 
-function renderPool(v) {
-  const used = v.assignments.reduce((s, a) => s + a.officers, 0);
-  const bar = $("poolbar"); bar.innerHTML = "";
-  for (let p = 0; p < v.pool; p++) {
-    const pip = document.createElement("span");
-    pip.className = "pip" + (p < used ? " on" : "");
-    bar.appendChild(pip);
-  }
-  $("poolnote").textContent = used > v.pool
-    ? `Over by ${used - v.pool}. Pull officers from a lower-priority chokepoint.`
-    : `${used} of ${v.pool} officers committed · ${v.pool - used} in reserve.`;
+/* Suggested officers per chokepoint, scaled to severity. No global pool — the
+   operator assigns however many each chokepoint warrants. */
+function suggestOfficers(sev, closure) {
+  if (closure || sev >= 0.66) return 3;   // high severity / closure
+  if (sev >= 0.33) return 2;               // medium
+  return 1;                                // low
+}
+
+/* Running tally of officers the operator has assigned (informational, no cap). */
+function renderTally(v) {
+  const total = v.assignments.reduce((s, a) => s + a.officers, 0);
+  $("poolnote").textContent =
+    `${total} officer${total === 1 ? "" : "s"} assigned across ${v.assignments.length} chokepoints · adjust per chokepoint by severity.`;
 }
 
 function renderLedger(v) {
@@ -123,15 +124,17 @@ function renderLedger(v) {
     const sev = (a.score - sMin) / sSpan;           // 0..1 within this forecast
     const barColor = a.closure ? "#FF5A5F" : severityColor(sev);
     const barPct = Math.round(18 + 82 * sev);        // floor so low bars still read
+    // suggest officers by severity; operator adjusts freely (no pool ceiling)
+    a.officers = suggestOfficers(sev, a.closure);
+    a._rec = a.officers;                             // remember the suggestion
     const row = document.createElement("div");
-    row.className = "row" + (a.officers === 0 ? " unfunded" : "");
+    row.className = "row";
     row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-expanded", "false");
     row.dataset.i = i;
-    a._rec = a.officers; // remember recommendation for override labelling
 
     const gutter = a.officers > 0
       ? `<div class="gutter">${'<span class="off-pip"></span>'.repeat(a.officers)}</div>`
-      : `<div class="gutter empty">—</div>`;
+      : `<div class="gutter empty">0</div>`;
     const analogRows = (a.analogs || []).map(an => `
       <div class="analog"><span class="ac">${fmtCause(an.cause)}</span>
       <span class="aa">${an.addr || "—"}</span><span class="aid">${an.id}</span></div>`).join("");
@@ -165,7 +168,7 @@ function renderLedger(v) {
             <span class="val">${a.officers}</span>
             <button type="button" data-d="1" aria-label="Add officer">+</button>
           </div>
-          <span class="ov-state">Recommended</span>
+          <span class="ov-state">Suggested ${a._rec}</span>
         </div>
       </div></div>`;
 
@@ -183,15 +186,15 @@ function renderLedger(v) {
     row.querySelectorAll("button[data-d]").forEach(btn => btn.addEventListener("click", ev => {
       ev.stopPropagation();
       const d = +btn.dataset.d;
-      a.officers = Math.max(0, Math.min(6, a.officers + d));
+      a.officers = Math.max(0, Math.min(12, a.officers + d));
       row.querySelector(".val").textContent = a.officers;
       const st = row.querySelector(".ov-state");
-      if (a.officers !== a._rec) { st.textContent = `Override · was ${a._rec}`; st.classList.add("changed"); }
-      else { st.textContent = "Recommended"; st.classList.remove("changed"); }
+      if (a.officers !== a._rec) { st.textContent = `Assigned · suggested ${a._rec}`; st.classList.add("changed"); }
+      else { st.textContent = `Suggested ${a._rec}`; st.classList.remove("changed"); }
       const g = row.querySelector(".gutter");
-      if (a.officers > 0) { g.className = "gutter"; g.innerHTML = '<span class="off-pip"></span>'.repeat(a.officers); row.classList.remove("unfunded"); }
-      else { g.className = "gutter empty"; g.textContent = "—"; row.classList.add("unfunded"); }
-      renderPool(CURRENT);
+      if (a.officers > 0) { g.className = "gutter"; g.innerHTML = '<span class="off-pip"></span>'.repeat(a.officers); }
+      else { g.className = "gutter empty"; g.textContent = "0"; }
+      renderTally(CURRENT);
     }));
     ledger.appendChild(row);
   });
