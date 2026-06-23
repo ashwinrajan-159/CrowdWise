@@ -25,14 +25,22 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # warm the model + seed the first forecast, then start the refresh loop
-    try:
-        pipeline.warm()
-        print("[startup] model warmed and ready")
-    except Exception as e:
-        print(f"[startup] WARM FAILED: {e}")
-    if config.ENABLE_SCHEDULER and STATE.ready:
-        scheduler.start()
+    # Warm the model in a BACKGROUND thread so the port binds immediately —
+    # Render's port scan times out if startup blocks on the CSV load + model
+    # train. /api/health reports ready=false and endpoints return 503 until warm
+    # finishes; the frontend already handles that "warming up" state.
+    import threading
+
+    def _warm_then_schedule():
+        try:
+            pipeline.warm()
+            print("[startup] model warmed and ready")
+        except Exception as e:
+            print(f"[startup] WARM FAILED: {e}")
+        if config.ENABLE_SCHEDULER and STATE.ready:
+            scheduler.start()
+
+    threading.Thread(target=_warm_then_schedule, daemon=True).start()
     yield
     scheduler.stop()
 

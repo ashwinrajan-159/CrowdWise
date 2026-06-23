@@ -56,9 +56,11 @@ def warm() -> None:
             STATE.hist_rep = hist_rep
             STATE.model = model
             STATE.warm_error = None
-        # seed an initial forecast so the first page paint is non-empty
+        # Seed an initial forecast from the bundled CACHED sample (instant, no
+        # network) so the first page paint is non-empty. The scheduler pulls live
+        # PredictHQ events shortly after. A live scrape here could hang warm-up.
         try:
-            view = scrape_to_view()
+            view = scrape_to_view(offline=True)
             with STATE.lock:
                 STATE.latest_view = view
         except Exception as e:  # seeding is best-effort; don't fail startup
@@ -98,24 +100,27 @@ def _rows_to_df(rows: list[dict]):
     return load_events(io.StringIO(buf.getvalue()))
 
 
-def scrape_to_view() -> dict:
+def scrape_to_view(offline: bool = False) -> dict:
     """Scrape upcoming events (PredictHQ -> cache fallback), forecast, return view.
 
+    offline=True skips the network and uses the bundled cached sample only —
+    used for the instant startup seed so warm-up never hangs on a live fetch.
     Imported lazily so a missing scraper dependency never breaks the API import.
     """
     import scrape_events as se
 
     events = []
     source = "cache"
-    try:
-        for fetch in se.SOURCES:
-            got = fetch(config.CITY)
-            if got:
-                events.extend(got)
-                source = "predicthq" if fetch.__name__ == "fetch_predicthq" else source
-    except Exception as e:
-        print(f"[scrape] fetch error, falling back to cache: {e}")
-        events = []
+    if not offline:
+        try:
+            for fetch in se.SOURCES:
+                got = fetch(config.CITY)
+                if got:
+                    events.extend(got)
+                    source = "predicthq" if fetch.__name__ == "fetch_predicthq" else source
+        except Exception as e:
+            print(f"[scrape] fetch error, falling back to cache: {e}")
+            events = []
 
     if not events:
         events = se.load_cached_events()
