@@ -30,6 +30,30 @@ Tech: Python, pandas, LightGBM (gradient-boosted forecast, chosen for native mis
 
 ---
 
+## How it maps to the problem statement (paste into Description or pitch)
+
+```
+Problem statement: forecast event-related traffic impact and recommend optimal
+manpower, barricading, and diversion plans, from historical + real-time data.
+
+CrowdWise delivers, per the brief:
+- Quantify impact in advance  -> per-event severity forecast (delay × exposure)
+- Resource deployment          -> manpower recommendation per chokepoint by severity
+- Barricading                  -> closure flag + barricade guidance per chokepoint
+- Diversion                    -> corridor-aware reroute guidance per closure
+- Post-event learning          -> retrain-as-history-grows loop (/api/retrain)
+- Historical data              -> 8,173-event Astram log, trained model
+- Real-time data               -> live PredictHQ event feed, scheduled refresh
+
+Validated by historical replay: +23.3% less delay on planned events (vs +4.1% all).
+
+Honest Phase-2 boundaries (documented, deliberate): live traffic-speed feed (vs.
+event data) and turn-by-turn routing (vs. text diversion guidance) plug into
+existing seams — deferred for evaluation integrity (the lost-ground-truth problem).
+```
+
+---
+
 ## Theme
 
 > Pick the closest available option — likely **Smart Cities / Urban Mobility / Public-Sector / AI-for-Good**. (Depends on the list shown; choose mobility/smart-city if present.)

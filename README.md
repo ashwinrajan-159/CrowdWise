@@ -52,6 +52,30 @@ Event calendar  →  Forecast  →  Ranked chokepoints  →  Officer plan  →  
 
 ---
 
+## How this maps to the problem statement
+
+> *Event-Driven Congestion (Planned & Unplanned): forecast event-related traffic
+> impact and recommend optimal manpower, barricading, and diversion plans, using
+> historical and real-time data.*
+
+| Problem statement asks for | CrowdWise | |
+|---|---|---|
+| Rallies, festivals, sports, construction, gatherings | Event causes: `vip_movement`, `public_event`, `construction`, `procession`, `protest` | ✅ |
+| **Quantify event impact in advance** | Per-event severity forecast (delay × exposure), days ahead | ✅ |
+| **Resource deployment** (not experience-driven) | Per-chokepoint **manpower** recommendation by severity | ✅ |
+| **Barricading** plan | Closure flag + barricade guidance per chokepoint | ✅ |
+| **Diversion** plan | Reroute guidance per closure chokepoint (corridor-aware) | ✅ |
+| **Post-event learning system** | Retrain-as-history-grows loop (`/api/retrain`) | ✅ |
+| **Historical data** | 8,173-event Astram log; trained model | ✅ |
+| **Real-time data** | Live PredictHQ event feed, scheduled refresh | ◑ events real-time; live *traffic* feed is Phase 2 |
+
+Two honest boundaries (both deliberate, both documented): live *traffic-speed* data
+(vs. event data) and turn-by-turn *routing* (vs. text diversion guidance) are Phase-2
+items that plug into existing seams — deferred for the evaluation-integrity reasons in
+[DESIGN.md](DESIGN.md), not skipped by accident.
+
+---
+
 ## Why a "Phase 0" (the hard problem we got right)
 
 The hardest problem in any system that *acts* on traffic predictions is the

@@ -13,6 +13,27 @@ function severityColor(t) {
   return `hsl(${hue}, 85%, 52%)`;
 }
 
+/* Operational plan per chokepoint: manpower + barricading + diversion, derived
+   from severity, cause, closure flag, and corridor. Text guidance (not turn-by-turn
+   routing — that's the Phase-2 road-network-graph job). */
+function operationalPlan(a, sev) {
+  const officers = a.officers;
+  const onCorridor = a.corridor && a.corridor !== "Non-corridor";
+  const barricading = a.closure
+    ? `<b>Barricade</b> the approach(es) to <b>${a.addr}</b>; pre-position cones/barriers before onset ${a.start}.`
+    : `Light barricading at <b>${a.addr}</b> — lane taper, no full closure expected.`;
+  const diversion = a.closure
+    ? (onCorridor
+        ? `<b>Divert</b> through traffic off <b>${a.corridor}</b> to the parallel arterial; hold the upstream signal longer and wave local-access only past the cordon.`
+        : `<b>Divert</b> approaching traffic around <b>${a.addr}</b> via the nearest alternate route; staff the diversion point so drivers don't queue into the closure.`)
+    : (onCorridor
+        ? `Keep <b>${a.corridor}</b> open; meter inflow at the upstream junction if queues build.`
+        : `No diversion needed; monitor and meter inflow if congestion forms.`);
+  const manpower = `<b>${officers}</b> officer${officers === 1 ? "" : "s"} on the ground` +
+    (sev >= 0.66 ? " (high severity — consider a supervisor on site)." : ".");
+  return `<b>Manpower:</b> ${manpower}<br><b>Barricading:</b> ${barricading}<br><b>Diversion:</b> ${diversion}`;
+}
+
 /* an SVG teardrop pin, tinted by severity, as a Leaflet divIcon */
 function pinIcon(color) {
   const svg =
@@ -159,6 +180,8 @@ function renderLedger(v) {
       </div>
       <div class="detail"><div class="detail-inner">
         <p class="why">${conf} Predicted to hold traffic <b>${Math.round(a.predicted_delay)} minutes</b> at peak; exposure on <b>${a.corridor}</b> rated <b>${a.exposure.toFixed(1)}×</b>.</p>
+        <div class="analogs-label">Recommended plan</div>
+        <p class="plan">${operationalPlan(a, sev)}</p>
         <div class="analogs-label">Built from these past events</div>
         <div class="analog-grid">${analogRows}</div>
         <div class="override">

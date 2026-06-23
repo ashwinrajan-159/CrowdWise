@@ -122,6 +122,9 @@ input[type=file]{display:none;}
 .detail-inner{padding:18px 0 8px;border-top:1px dashed var(--hair-bright);margin-top:14px;}
 .why{color:var(--text-dim);font-size:14px;max-width:64ch;margin:0 0 18px;}
 .why b{color:var(--text);font-weight:600;}
+.plan{color:var(--text-dim);font-size:13.5px;line-height:1.7;max-width:66ch;margin:0 0 18px;
+  border-left:2px solid var(--accent);padding-left:14px;}
+.plan b{color:var(--text);font-weight:600;}
 .analogs-label{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;
   letter-spacing:.18em;font-size:11px;color:var(--accent);font-weight:700;margin-bottom:10px;}
 .analog-grid{display:flex;flex-direction:column;gap:1px;background:var(--hair);border:1px solid var(--hair);
