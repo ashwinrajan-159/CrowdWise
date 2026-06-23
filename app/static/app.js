@@ -239,8 +239,19 @@ function renderMap(v) {
       ).addTo(MARKERS);
   });
 
-  if (pts.length) MAP.fitBounds(L.latLngBounds(pts.map(a => [a.lat, a.lon])).pad(0.3));
-  else MAP.setView([12.97, 77.59], 11); // Bengaluru fallback (empty fitBounds throws)
+  // Fit the map to the DENSE cluster, ignoring far-flung outliers — one event
+  // 300 km away shouldn't force a whole-state zoom that collapses the city pins
+  // into a blob. Center on the median point; include points within ~60 km of it.
+  if (pts.length) {
+    const med = arr => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+    const cLat = med(pts.map(a => a.lat)), cLon = med(pts.map(a => a.lon));
+    const near = pts.filter(a =>
+      Math.hypot(a.lat - cLat, (a.lon - cLon) * Math.cos(cLat * Math.PI / 180)) < 0.6); // ~60km
+    const fit = (near.length ? near : pts).map(a => [a.lat, a.lon]);
+    MAP.fitBounds(L.latLngBounds(fit).pad(0.25), { maxZoom: 13 }); // cap so it never over/under-zooms
+  } else {
+    MAP.setView([12.97, 77.59], 11); // Bengaluru fallback (empty fitBounds throws)
+  }
   setTimeout(() => MAP.invalidateSize(), 100);
 }
 
