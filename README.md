@@ -132,6 +132,11 @@ Surfaced, not buried — Phase 0 exists to find these cheaply (full detail in
   reported as a diagnostic.
 - The model **generalizes to new dates** and **retrains as history grows**, but does
   **not** learn from acted-upon outcomes — that's the lost-ground-truth boundary.
+- The live feed covers **planned events** (the wedge — known days ahead). **Unplanned
+  incidents** (accidents, breakdowns) can't be forecast from a calendar; they need a
+  live incident feed (Waze/connected-vehicle) and are a Phase-2 source that plugs into
+  the same pipeline. The model has learned from historical unplanned events, so an
+  uploaded incident is still scored.
 
 ---
 
