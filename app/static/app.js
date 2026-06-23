@@ -239,18 +239,14 @@ function renderMap(v) {
       ).addTo(MARKERS);
   });
 
-  // Fit the map to the DENSE cluster, ignoring far-flung outliers — one event
-  // 300 km away shouldn't force a whole-state zoom that collapses the city pins
-  // into a blob. Center on the median point; include points within ~60 km of it.
-  if (pts.length) {
-    const med = arr => { const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
-    const cLat = med(pts.map(a => a.lat)), cLon = med(pts.map(a => a.lon));
-    const near = pts.filter(a =>
-      Math.hypot(a.lat - cLat, (a.lon - cLon) * Math.cos(cLat * Math.PI / 180)) < 0.6); // ~60km
-    const fit = (near.length ? near : pts).map(a => [a.lat, a.lon]);
-    MAP.fitBounds(L.latLngBounds(fit).pad(0.25), { maxZoom: 13 }); // cap so it never over/under-zooms
+  // Fit to ALL points (statewide coverage), with a max-zoom cap so a tight
+  // cluster doesn't over-zoom. Every event is shown wherever it is.
+  if (pts.length > 1) {
+    MAP.fitBounds(L.latLngBounds(pts.map(a => [a.lat, a.lon])).pad(0.2), { maxZoom: 12 });
+  } else if (pts.length === 1) {
+    MAP.setView([pts[0].lat, pts[0].lon], 12);
   } else {
-    MAP.setView([12.97, 77.59], 11); // Bengaluru fallback (empty fitBounds throws)
+    MAP.setView([14.5, 76.0], 7); // Karnataka fallback (empty fitBounds throws)
   }
   setTimeout(() => MAP.invalidateSize(), 100);
 }

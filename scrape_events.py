@@ -144,16 +144,22 @@ def fetch_predicthq(city: str) -> list[RawEvent]:
         import requests
         today = datetime.now(timezone.utc).date()
         horizon = today + timedelta(days=14)
+        # Geographic scope: a `within` radius covers a whole region intentionally,
+        # rather than the fuzzy text `q` (which scatters results unpredictably).
+        # Default covers Karnataka (centroid ~14.5N,76E, ~450km radius). Override
+        # with PHQ_WITHIN="<radius>km@<lat>,<lon>" for another region/city.
+        within = os.getenv("PHQ_WITHIN", "450km@14.5,76.0").strip()
+        params = {
+            "active.gte": today.isoformat(),
+            "active.lte": horizon.isoformat(),
+            "category": ",".join(PHQ_CATEGORY_TO_CAUSE),
+            "within": within,
+            "limit": 100, "sort": "rank",
+        }
         r = requests.get(
             "https://api.predicthq.com/v1/events/",
             headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-            params={
-                "q": city,
-                "active.gte": today.isoformat(),
-                "active.lte": horizon.isoformat(),
-                "category": ",".join(PHQ_CATEGORY_TO_CAUSE),
-                "limit": 50, "sort": "rank",
-            },
+            params=params,
             timeout=10.0,
         )
         if not r.ok:

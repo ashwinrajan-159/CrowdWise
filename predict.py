@@ -156,7 +156,7 @@ def _build_view(df, feats, pred, pb, rep) -> dict:
         return str(a).split(",")[0].strip()[:40]
 
     rows = []
-    for a in pb.assignments[:14]:
+    for a in pb.assignments[:30]:   # show more chokepoints so statewide spread is visible
         rows.append({
             "rank": a.rank, "event_id": a.event_id, "cause": a.cause,
             "type": type_of.get(a.event_id, "planned"),
