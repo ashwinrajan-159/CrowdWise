@@ -7,8 +7,10 @@ cache.STATE is reused.
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
+import pickle
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,6 +28,52 @@ from app.cache import STATE
 # "improves with each event cycle" loop. We only ever retrain on events whose
 # start time has passed (real occurrences), never on future guesses.
 SEEN_EVENTS = Path(__file__).resolve().parent.parent / "seen_events.csv"
+
+# Trained-model cache. Training LightGBM from scratch takes 30-90s on a small
+# free-tier instance; persisting it turns every cold start after the first into a
+# ~1s load. The cache key is a fingerprint of the training history, so any change
+# to the data (or a retrain that grows history) auto-invalidates a stale model.
+MODEL_CACHE_DIR = Path(__file__).resolve().parent.parent / ".model_cache"
+
+
+def _history_fingerprint(hist_df) -> str:
+    """Stable hash of the training history so the model cache invalidates on change."""
+    ids = ",".join(map(str, hist_df["event_id"].tolist()))
+    return hashlib.sha256(f"{len(hist_df)}|{ids}".encode()).hexdigest()[:16]
+
+
+def _load_cached_model(fp: str):
+    path = MODEL_CACHE_DIR / f"model_{fp}.pkl"
+    if path.exists():
+        try:
+            with path.open("rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            print(f"[model-cache] load failed ({e}); will retrain")
+    return None
+
+
+def _save_cached_model(fp: str, model) -> None:
+    try:
+        MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with (MODEL_CACHE_DIR / f"model_{fp}.pkl").open("wb") as f:
+            pickle.dump(model, f)
+        print(f"[model-cache] saved model_{fp}.pkl")
+    except Exception as e:
+        print(f"[model-cache] save skipped (non-fatal): {e}")
+
+
+def train_or_load(hist_df):
+    """Load the trained model from disk if the history matches; else train + cache."""
+    fp = _history_fingerprint(hist_df)
+    model = _load_cached_model(fp)
+    if model is not None:
+        print(f"[model-cache] loaded cached model ({fp}) — skipped training")
+        return model
+    print("[model-cache] no cached model — training…")
+    model = train_on_history(hist_df, CFG)
+    _save_cached_model(fp, model)
+    return model
 
 
 def _now_iso() -> str:
@@ -47,10 +95,10 @@ def attach_coords(view: dict, combined: pd.DataFrame) -> dict:
 
 
 def warm() -> None:
-    """Load history + train the booster once. Called at server startup."""
+    """Load history + get the booster (cached on disk if available). At startup."""
     try:
         hist_df, hist_rep = load_events(CFG.data_csv)
-        model = train_on_history(hist_df, CFG)
+        model = train_or_load(hist_df)
         with STATE.lock:
             STATE.hist_df = hist_df
             STATE.hist_rep = hist_rep
@@ -199,9 +247,13 @@ def retrain() -> dict:
         except Exception as e:
             print(f"[retrain] seen-events merge skipped: {e}")
 
+    # retrain always fits fresh (history grew); cache the result so the next
+    # restart loads it instead of retraining.
+    hist_df = hist_df.reset_index(drop=True)
     model = train_on_history(hist_df, CFG)
+    _save_cached_model(_history_fingerprint(hist_df), model)
     with STATE.lock:
-        STATE.hist_df = hist_df.reset_index(drop=True)
+        STATE.hist_df = hist_df
         STATE.model = model
     summary = {"base_events": base_rep.kept_rows, "added_from_seen": added,
                "history_total": len(hist_df), "retrained_at": _now_iso()}
