@@ -10,7 +10,6 @@ import csv
 import hashlib
 import io
 import json
-import pickle
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,8 +30,10 @@ SEEN_EVENTS = Path(__file__).resolve().parent.parent / "seen_events.csv"
 
 # Trained-model cache. Training LightGBM from scratch takes 30-90s on a small
 # free-tier instance; persisting it turns every cold start after the first into a
-# ~1s load. The cache key is a fingerprint of the training history, so any change
-# to the data (or a retrain that grows history) auto-invalidates a stale model.
+# fast load. We save the booster in LightGBM's NATIVE text format (portable across
+# library versions) + a small JSON sidecar — NOT pickle, which breaks when the
+# deployed lightgbm/numpy versions differ from the machine that trained it.
+# Cache key = fingerprint of the training history, so any data change invalidates.
 MODEL_CACHE_DIR = Path(__file__).resolve().parent.parent / ".model_cache"
 
 
@@ -43,22 +44,30 @@ def _history_fingerprint(hist_df) -> str:
 
 
 def _load_cached_model(fp: str):
-    path = MODEL_CACHE_DIR / f"model_{fp}.pkl"
-    if path.exists():
-        try:
-            with path.open("rb") as f:
-                return pickle.load(f)
-        except Exception as e:
-            print(f"[model-cache] load failed ({e}); will retrain")
-    return None
+    txt = MODEL_CACHE_DIR / f"model_{fp}.txt"
+    meta = MODEL_CACHE_DIR / f"model_{fp}.json"
+    if not (txt.exists() and meta.exists()):
+        return None
+    try:
+        import lightgbm as lgb
+        from gridlock.model import TrainedModel
+        booster = lgb.Booster(model_file=str(txt))
+        m = json.loads(meta.read_text(encoding="utf-8"))
+        return TrainedModel(booster=booster, feature_cols=m["feature_cols"],
+                            cfg=CFG, target_name=m["target_name"])
+    except Exception as e:
+        print(f"[model-cache] load failed ({e}); will retrain")
+        return None
 
 
 def _save_cached_model(fp: str, model) -> None:
     try:
         MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        with (MODEL_CACHE_DIR / f"model_{fp}.pkl").open("wb") as f:
-            pickle.dump(model, f)
-        print(f"[model-cache] saved model_{fp}.pkl")
+        model.booster.save_model(str(MODEL_CACHE_DIR / f"model_{fp}.txt"))
+        (MODEL_CACHE_DIR / f"model_{fp}.json").write_text(
+            json.dumps({"feature_cols": model.feature_cols,
+                        "target_name": model.target_name}), encoding="utf-8")
+        print(f"[model-cache] saved model_{fp} (native format)")
     except Exception as e:
         print(f"[model-cache] save skipped (non-fatal): {e}")
 
