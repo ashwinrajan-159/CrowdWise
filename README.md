@@ -274,6 +274,43 @@ generates the same dashboard for *your* file.)
 
 ---
 
+## Run the web app (full stack)
+
+The `app/` package is a FastAPI backend + a single-page frontend with a **live map**
+of where congestion will occur, **CSV upload**, and a **scheduled refresh** that
+re-scrapes upcoming events and re-forecasts.
+
+```bash
+pip install -r requirements.txt           # includes fastapi, uvicorn, apscheduler
+
+# optional: live event data from PredictHQ (works on the bundled sample without it)
+export PREDICTHQ_TOKEN=your_token         # Windows: $env:PREDICTHQ_TOKEN="your_token"
+
+uvicorn app.main:app --reload             # then open http://127.0.0.1:8000
+```
+
+What you get at `http://127.0.0.1:8000`:
+- A **Leaflet map** of chokepoints, sized/colored by predicted impact (red = closure).
+- The ranked **deployment ledger** beside it — click a chokepoint for the past events
+  behind the forecast and an officer-override stepper.
+- **Upload event CSV** — drop in any event calendar (the required columns are
+  `id, event_type, event_cause, latitude, longitude, start_datetime`) and the map +
+  ledger re-render for it.
+- **Refresh forecast** — re-scrapes upcoming events (PredictHQ, or the bundled sample)
+  and re-forecasts. This updates **event forecasts, not live traffic** — a real
+  connected-vehicle feed is the designed-for next phase.
+
+API: `GET /api/events/current`, `POST /api/predict` (multipart CSV), `POST /api/scrape`,
+`GET /api/health`.
+
+**Deploy (Render):** the repo ships [render.yaml](render.yaml), a [Procfile](Procfile),
+and [.env.example](.env.example). Connect the repo on Render, set `PREDICTHQ_TOKEN` as a
+secret, and deploy. Note: free-tier services sleep when idle (≈5–10s cold start on the
+next request) and the in-process scheduler pauses while asleep — `render.yaml` documents
+an optional cron that keeps the forecast refreshing.
+
+---
+
 ## Repo layout
 
 ```
@@ -283,12 +320,16 @@ generates the same dashboard for *your* file.)
 ├── RESULTS.md             ← the wedge proof + honest caveats
 ├── run_phase0.py          ← end-to-end runner: validate on history (the entry point)
 ├── predict.py             ← forward prediction: chokepoints for a NEW events file
-├── scrape_events.py       ← auto-fill the events file from public web listings
+├── scrape_events.py       ← fetch upcoming events (PredictHQ API + cached fallback)
 ├── events_cache.json      ← bundled fallback events (keeps the scraper demo alive)
 ├── requirements.txt
+├── render.yaml · Procfile · .env.example   ← web-app deploy config (Render)
 ├── astram_event_data_anonymized.csv   ← the real (anonymized) event log
 ├── upcoming_events.csv    ← sample 'future' events for predict.py
 ├── gridlock/              ← the pipeline package (10 modules, see table above)
+├── app/                   ← the web app (FastAPI backend + Leaflet/upload frontend)
+│   ├── main.py · pipeline.py · cache.py · scheduler.py · config.py
+│   └── static/            ← index.html · app.css · app.js (the SPA)
 ├── tests/                 ← pytest suite (12 tests)
 ├── images/                ← README screenshots
 ├── artifacts/             ← canonical dashboards + generated run outputs

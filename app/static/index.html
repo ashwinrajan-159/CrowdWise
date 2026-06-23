@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrowdWise — Event-Driven Congestion</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚦</text></svg>">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Planned-Event Traffic Ops · Decision Support</div>
+    <h1>Crowd<span class="date">Wise</span></h1>
+    <p class="standfirst">Where congestion will occur for the city's known upcoming events — ranked chokepoints on a map, with the officer-deployment plan behind each. Upload an event calendar, or use the auto-refreshed forecast. Decision-support for traffic centers, not autonomous control.</p>
+  </header>
+
+  <div class="toolbar">
+    <label class="btn primary" for="csv">⬆ Upload event CSV</label>
+    <input type="file" id="csv" accept=".csv">
+    <button class="btn" id="refresh">↻ Refresh forecast</button>
+    <span class="source-badge" id="source">loading…</span>
+    <span class="spinner" id="spinner" hidden>working…</span>
+  </div>
+
+  <section class="strip" aria-label="Summary">
+    <div class="stat live"><div class="k" id="s-pool">—</div><div class="l">Officers available</div></div>
+    <div class="stat"><div class="k" id="s-choke">—</div><div class="l">Chokepoints</div></div>
+    <div class="stat"><div class="k" id="s-planned">—</div><div class="l">Planned events</div></div>
+    <div class="stat"><div class="k" id="s-closures">—</div><div class="l">Road closures</div></div>
+  </section>
+
+  <div class="grid">
+    <div>
+      <h2 class="panel-label">Where congestion will occur</h2>
+      <div id="map"></div>
+    </div>
+    <div>
+      <div class="ledger-head">
+        <h2>Chokepoint priority</h2>
+        <div class="legend">
+          <span><i class="dot amber"></i> Officer assigned</span>
+          <span><i class="dot none"></i> Unfunded</span>
+        </div>
+      </div>
+      <div class="poolbar" id="poolbar" aria-label="Officer allocation"></div>
+      <div class="poolnote" id="poolnote"></div>
+      <div id="ledger"></div>
+    </div>
+  </div>
+
+  <footer>
+    <b>Reading this board.</b> Score = predicted delay (min) × population exposure. The officer pool covers the highest-scoring chokepoints first; ranks below the cutoff are unfunded until you free an officer. Each prediction lists the most similar past events it was built from — if those analogs look wrong, override it.<br><br>
+    <b>What "refresh" does.</b> It re-scrapes the upcoming event calendar and re-forecasts — it updates <i>event forecasts</i>, not live traffic state. A real connected-vehicle feed is the designed-for next phase.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>

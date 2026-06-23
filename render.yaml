@@ -1,0 +1,32 @@
+# Render blueprint for the CrowdWise web app.
+# Deploy: connect this repo on Render, then set PREDICTHQ_TOKEN as a secret.
+services:
+  - type: web
+    name: crowdwise
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PREDICTHQ_TOKEN
+        sync: false          # set in the Render dashboard as a secret (do NOT commit)
+      - key: REFRESH_MINUTES
+        value: "60"
+      - key: CITY
+        value: "Bengaluru"
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+
+  # Optional: a reliable external refresh. The in-process scheduler stops when a
+  # free-tier web service sleeps; this cron wakes it and refreshes the forecast.
+  # Uncomment and set APP_URL to your deployed service URL.
+  # - type: cron
+  #   name: crowdwise-refresh
+  #   runtime: python
+  #   plan: free
+  #   schedule: "0 * * * *"
+  #   buildCommand: pip install requests
+  #   startCommand: python -c "import os,requests;requests.post(os.environ['APP_URL'].rstrip('/')+'/api/scrape',timeout=60)"
+  #   envVars:
+  #     - key: APP_URL
+  #       value: "https://crowdwise.onrender.com"

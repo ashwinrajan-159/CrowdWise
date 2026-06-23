@@ -4,6 +4,9 @@ __pycache__/
 artifacts/replay_log_*.csv
 artifacts/summary_*.json
 artifacts/walkforward_log_*.csv
+artifacts/operator_view_upcoming.html
+artifacts/operator_view_scraped.html
 .venv/
 .geocode_cache.json
 scraped_events.csv
+.env

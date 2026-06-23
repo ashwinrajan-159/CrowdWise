@@ -36,10 +36,12 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -116,7 +118,73 @@ def fetch_public_listings(city: str) -> list[RawEvent]:
     return events
 
 
-SOURCES = [fetch_public_listings]
+# PredictHQ event categories -> the model's controlled causes.
+PHQ_CATEGORY_TO_CAUSE = {
+    "concerts": "public_event", "festivals": "public_event",
+    "performing-arts": "public_event", "sports": "public_event",
+    "community": "public_event", "expos": "public_event",
+    "conferences": "public_event", "politics": "protest",
+    "observances": "procession",
+}
+# Categories whose footprint usually implies a road closure.
+PHQ_CLOSURE_CATEGORIES = {"sports", "concerts", "festivals", "politics"}
+
+
+def fetch_predicthq(city: str) -> list[RawEvent]:
+    """Fetch upcoming events from the PredictHQ API.
+
+    Needs the PREDICTHQ_TOKEN env var; without it, returns [] so the caller
+    falls back to the cached sample. PredictHQ supplies a [lon, lat] location,
+    so most rows skip Nominatim. Fails soft on any error.
+    """
+    token = os.getenv("PREDICTHQ_TOKEN", "").strip()
+    if not token:
+        return []
+    try:
+        import requests
+        today = datetime.now(timezone.utc).date()
+        horizon = today + timedelta(days=14)
+        r = requests.get(
+            "https://api.predicthq.com/v1/events/",
+            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+            params={
+                "q": city,
+                "active.gte": today.isoformat(),
+                "active.lte": horizon.isoformat(),
+                "category": ",".join(PHQ_CATEGORY_TO_CAUSE),
+                "limit": 50, "sort": "rank",
+            },
+            timeout=10.0,
+        )
+        if not r.ok:
+            print(f"  [warn] predicthq HTTP {r.status_code}: {r.text[:120]}")
+            return []
+        out: list[RawEvent] = []
+        for ev in r.json().get("results", []):
+            cat = ev.get("category", "")
+            loc = ev.get("location") or [None, None]   # PHQ geo = [lon, lat]
+            lon, lat = (loc + [None, None])[:2]
+            entities = ev.get("entities") or []
+            venue = (entities[0].get("name") if entities else None) or ev.get("title") or city
+            out.append(RawEvent(
+                title=ev.get("title", "event"),
+                kind=cat,
+                venue=venue,
+                start=ev.get("start", ""),
+                end=ev.get("end"),
+                closure=cat in PHQ_CLOSURE_CATEGORIES,
+                priority="High" if (ev.get("rank") or 0) >= 60 else "Low",
+                lat=lat, lon=lon,
+            ))
+        print(f"  [predicthq] {len(out)} events for {city}")
+        return out
+    except Exception as e:
+        print(f"  [warn] predicthq fetch failed: {e}")
+        return []
+
+
+# PredictHQ first (real data); public-listings + cache fallback behind it.
+SOURCES = [fetch_predicthq, fetch_public_listings]
 
 
 # --------------------------------------------------------------------------- #
@@ -162,7 +230,9 @@ def to_rows(events: list[RawEvent], geocode_cache: dict) -> list[dict]:
                 print(f"  [skip] could not geocode: {ev.venue!r}")
                 continue
             lat, lon = coords
-        cause = KIND_TO_CAUSE.get(ev.kind.lower().strip(), "public_event")
+        kind = ev.kind.lower().strip()
+        # PredictHQ category names first, then the free-text kind map, else public_event.
+        cause = PHQ_CATEGORY_TO_CAUSE.get(kind) or KIND_TO_CAUSE.get(kind, "public_event")
         rows.append({
             "id": f"SCRAPE{i:04d}",
             "event_type": "planned",
