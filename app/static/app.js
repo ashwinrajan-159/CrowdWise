@@ -1,7 +1,7 @@
 /* CrowdWise frontend — fetches forecasts, renders the map + ledger, handles upload. */
 "use strict";
 
-let MAP = null, MARKERS = null, CURRENT = null;
+let MAP = null, MARKERS = null, ROUTES = null, CURRENT = null;
 const $ = id => document.getElementById(id);
 const fmtCause = c => (c || "").replace(/_/g, " ");
 
@@ -199,8 +199,17 @@ function renderLedger(v) {
       if (e.target.closest(".override")) return;
       if (e.target.closest(".stepper")) return;
       const open = row.getAttribute("aria-expanded") === "true";
+      // collapse any other open row so only one is expanded at a time
+      document.querySelectorAll('.row[aria-expanded="true"]').forEach(r => {
+        if (r !== row) r.setAttribute("aria-expanded", "false");
+      });
       row.setAttribute("aria-expanded", String(!open));
-      if (!open && a.lat != null && a.lon != null && MAP) MAP.panTo([a.lat, a.lon]);
+      if (!open && a.lat != null && a.lon != null && MAP) {
+        if (a.closure) showDiversionFor(a);          // draw + zoom to the diversion
+        else { clearDiversion(); MAP.setView([a.lat, a.lon], 14); }
+      } else if (open) {
+        clearDiversion();
+      }
     });
     row.addEventListener("keydown", e => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); }
@@ -271,7 +280,49 @@ function renderMap(v) {
   } else {
     MAP.setView([14.5, 76.0], 7); // Karnataka fallback (empty fitBounds throws)
   }
+
   setTimeout(() => MAP.invalidateSize(), 100);
+}
+
+/* Draw an indicative, road-following diversion around ONE closure, on demand
+   (when its chokepoint is expanded). Endpoints are offset points either side of
+   the closure, so OSRM returns a plausible go-around on real streets. Indicative
+   (not an official diversion); fails soft — no line if OSRM is down, the text plan
+   always remains. */
+async function showDiversionFor(a) {
+  if (ROUTES) ROUTES.remove();
+  ROUTES = L.layerGroup().addTo(MAP);
+  if (!a.closure || a.lat == null || a.lon == null) return;
+  const kmLat = 1 / 111;
+  const kmLon = 1 / (111 * Math.cos(a.lat * Math.PI / 180));
+  const d = 1.2;                                           // ~1.2 km offset each side
+  const aPt = [a.lon - d * kmLon, a.lat - d * kmLat];      // OSRM wants lon,lat
+  const bPt = [a.lon + d * kmLon, a.lat + d * kmLat];
+  const url = `https://router.project-osrm.org/route/v1/driving/` +
+    `${aPt[0]},${aPt[1]};${bPt[0]},${bPt[1]}?overview=full&geometries=geojson`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const j = await r.json();
+    const coords = j.routes?.[0]?.geometry?.coordinates;
+    if (!coords || !coords.length) return;
+    const latlngs = coords.map(c => [c[1], c[0]]);
+    // casing underneath + bright teal on top, so the diversion reads clearly on streets
+    L.polyline(latlngs, { color: "#0E1418", weight: 9, opacity: 0.9, lineCap: "round" }).addTo(ROUTES);
+    const line = L.polyline(latlngs, {
+      color: "#2DD4BF", weight: 5, opacity: 1, lineCap: "round",
+    }).bindPopup(`<b>Suggested diversion</b> (indicative)<br>around ${a.addr}`).addTo(ROUTES);
+    // arrow markers at the ends to read as a route
+    L.circleMarker(latlngs[0], { radius: 5, color: "#2DD4BF", fillColor: "#0E1418", fillOpacity: 1, weight: 3 }).addTo(ROUTES);
+    L.circleMarker(latlngs[latlngs.length - 1], { radius: 5, color: "#2DD4BF", fillColor: "#0E1418", fillOpacity: 1, weight: 3 }).addTo(ROUTES);
+    MAP.fitBounds(line.getBounds().pad(0.3), { maxZoom: 15 });
+  } catch (e) {
+    /* OSRM unavailable — skip the line; the text plan still covers it */
+  }
+}
+
+function clearDiversion() {
+  if (ROUTES) { ROUTES.remove(); ROUTES = null; }
 }
 
 /* ---------------- ui helpers ---------------- */

@@ -64,6 +64,8 @@ input[type=file]{display:none;}
 /* map */
 .panel-label{font-family:var(--cond);font-stretch:condensed;text-transform:uppercase;
   letter-spacing:.04em;font-weight:800;font-size:18px;margin:0 0 12px;}
+.panel-label .hint{font-family:"Inter",system-ui,sans-serif;font-stretch:normal;
+  text-transform:none;letter-spacing:0;font-weight:400;font-size:12.5px;color:var(--teal);}
 #map{height:540px;border:1px solid var(--hair);border-radius:6px;background:var(--ground-2);}
 .leaflet-popup-content-wrapper{background:var(--ground-2);color:var(--text);border-radius:5px;
   border:1px solid var(--hair-bright);}
